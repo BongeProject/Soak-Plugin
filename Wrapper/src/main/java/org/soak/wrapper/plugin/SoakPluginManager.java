@@ -23,7 +23,7 @@ import org.soak.map.event.EventSingleListenerWrapper;
 import org.soak.plugin.SoakManager;
 import org.soak.plugin.SoakPluginContainer;
 import org.soak.plugin.paper.SoakPluginProviderContext;
-import org.soak.utils.GenericHelper;
+import org.soak.utils.GeneralHelper;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.plugin.PluginManager;
 import org.spongepowered.api.service.permission.PermissionService;
@@ -88,6 +88,11 @@ public class SoakPluginManager implements org.bukkit.plugin.PluginManager {
             return new Plugin[0];
         }
         return MoseStream.stream(array).map(this::loadPlugin).toArray(JavaPlugin[]::new);
+    }
+
+    @Override
+    public @NotNull Plugin[] loadPlugins(@NotNull File[] files) {
+        return MoseStream.stream(files).map(this::loadPlugin).toArray(JavaPlugin[]::new);
     }
 
     @Override
@@ -240,7 +245,7 @@ public class SoakPluginManager implements org.bukkit.plugin.PluginManager {
     @Override
     public void addPermission(@NotNull Permission perm) {
         permissionService().ifPresent(service -> {
-            var pluginContainer = GenericHelper.fromStackTrace();
+            var pluginContainer = GeneralHelper.fromStackTrace();
             Tristate permissionDefault = switch (perm.getDefault()) {
                 case TRUE -> Tristate.TRUE;
                 case FALSE -> Tristate.FALSE;

@@ -10,21 +10,24 @@ import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.*;
 import org.bukkit.entity.memory.MemoryKey;
+import org.bukkit.event.entity.EntityRegainHealthEvent;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.util.Consumer;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Range;
 import org.soak.Constants;
 import org.soak.exception.NotImplementedException;
 import org.soak.wrapper.block.SoakBlock;
+import org.soak.wrapper.damage.SoakDamageSource;
 import org.soak.wrapper.entity.AbstractEntity;
 import org.soak.wrapper.entity.SoakAttributable;
 import org.soak.wrapper.entity.SoakDamageable;
@@ -36,10 +39,8 @@ import org.spongepowered.api.service.permission.Subject;
 import org.spongepowered.api.util.blockray.RayTrace;
 import org.spongepowered.api.world.server.ServerWorld;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public abstract class AbstractLivingEntity<E extends Living> extends AbstractEntity<E> implements SoakDamageable, SoakAttributable, SoakProjectileSource, LivingEntity {
@@ -64,6 +65,16 @@ public abstract class AbstractLivingEntity<E extends Living> extends AbstractEnt
     }
 
     @Override
+    public int getNextArrowRemoval() {
+        throw NotImplementedException.createByLazy(LivingEntity.class, "getNextArrowRemoval");
+    }
+
+    @Override
+    public void setNextArrowRemoval(@Range(from = 0L, to = 2147483647L) int i) {
+        throw NotImplementedException.createByLazy(LivingEntity.class, "setNextArrowRemoval", int.class);
+    }
+
+    @Override
     public int getBeeStingerCooldown() {
         throw NotImplementedException.createByLazy(LivingEntity.class, "getBeeStingerCooldown");
     }
@@ -81,6 +92,16 @@ public abstract class AbstractLivingEntity<E extends Living> extends AbstractEnt
     @Override
     public void setBeeStingersInBody(int i) {
         throw NotImplementedException.createByLazy(LivingEntity.class, "setBeeStingersInBody", int.class);
+    }
+
+    @Override
+    public int getNextBeeStingerRemoval() {
+        throw NotImplementedException.createByLazy(LivingEntity.class, "getNextBeeStingerRemoval");
+    }
+
+    @Override
+    public void setNextBeeStingerRemoval(@Range(from = 0L, to = 2147483647L) int i) {
+        throw NotImplementedException.createByLazy(LivingEntity.class, "setNextBeeStingerRemoval", int.class);
     }
 
     @Override
@@ -112,7 +133,6 @@ public abstract class AbstractLivingEntity<E extends Living> extends AbstractEnt
     @Override
     public @NotNull Sound getFallDamageSoundBig() {
         throw NotImplementedException.createByLazy(LivingEntity.class, "getFallDamageSoundBig");
-
     }
 
     @Override
@@ -153,7 +173,6 @@ public abstract class AbstractLivingEntity<E extends Living> extends AbstractEnt
     @Override
     public void damageItemStack(@NotNull EquipmentSlot equipmentSlot, int i) {
         throw NotImplementedException.createByLazy(LivingEntity.class, "damageItemStack", EquipmentSlot.class, int.class);
-
     }
 
     @Override
@@ -169,7 +188,6 @@ public abstract class AbstractLivingEntity<E extends Living> extends AbstractEnt
     @Override
     public @NotNull TriState getFrictionState() {
         throw NotImplementedException.createByLazy(LivingEntity.class, "getFrictionState");
-
     }
 
     @Override
@@ -318,6 +336,21 @@ public abstract class AbstractLivingEntity<E extends Living> extends AbstractEnt
     }
 
     @Override
+    public @Nullable ItemStack getItemInUse() {
+        throw NotImplementedException.createByLazy(LivingEntity.class, "getItemInUse");
+    }
+
+    @Override
+    public int getItemInUseTicks() {
+        throw NotImplementedException.createByLazy(LivingEntity.class, "getItemInUseTicks");
+    }
+
+    @Override
+    public void setItemInUseTicks(int i) {
+        throw NotImplementedException.createByLazy(LivingEntity.class, "setItemInUseTicks", int.class);
+    }
+
+    @Override
     public int getArrowCooldown() {
         throw NotImplementedException.createByLazy(LivingEntity.class, "getArrowCooldown");
     }
@@ -368,6 +401,16 @@ public abstract class AbstractLivingEntity<E extends Living> extends AbstractEnt
     }
 
     @Override
+    public int getNoActionTicks() {
+        throw NotImplementedException.createByLazy(LivingEntity.class, "getNoActionsTicks");
+    }
+
+    @Override
+    public void setNoActionTicks(int i) {
+        throw NotImplementedException.createByLazy(LivingEntity.class, "setNoActionTicks", int.class);
+    }
+
+    @Override
     public Player getKiller() {
         throw NotImplementedException.createByLazy(LivingEntity.class, "getKiller");
     }
@@ -414,6 +457,11 @@ public abstract class AbstractLivingEntity<E extends Living> extends AbstractEnt
     @Override
     public @NotNull Collection<PotionEffect> getActivePotionEffects() {
         throw NotImplementedException.createByLazy(LivingEntity.class, "getActivePotionEffects");
+    }
+
+    @Override
+    public boolean clearActivePotionEffects() {
+        return this.spongeEntity().offer(Keys.POTION_EFFECTS, Collections.emptyList()).isSuccessful();
     }
 
     @Override
@@ -502,6 +550,11 @@ public abstract class AbstractLivingEntity<E extends Living> extends AbstractEnt
     }
 
     @Override
+    public void setRiptiding(boolean b) {
+        throw NotImplementedException.createByLazy(LivingEntity.class, "setRiptiding", boolean.class);
+    }
+
+    @Override
     public boolean isSleeping() {
         return this.spongeEntity().get(Keys.IS_SLEEPING).orElse(false);
     }
@@ -529,6 +582,11 @@ public abstract class AbstractLivingEntity<E extends Living> extends AbstractEnt
     @Override
     public void swingOffHand() {
         throw NotImplementedException.createByLazy(LivingEntity.class, "swingOffHand");
+    }
+
+    @Override
+    public void playHurtAnimation(float v) {
+        throw NotImplementedException.createByLazy(LivingEntity.class, "playHurtAnimation", float.class);
     }
 
     @Override
@@ -589,6 +647,31 @@ public abstract class AbstractLivingEntity<E extends Living> extends AbstractEnt
     }
 
     @Override
+    public float getSidewaysMovement() {
+        throw NotImplementedException.createByLazy(LivingEntity.class, "getSidewaysMovement");
+    }
+
+    @Override
+    public float getUpwardsMovement() {
+        throw NotImplementedException.createByLazy(LivingEntity.class, "getUpwardsMovement");
+    }
+
+    @Override
+    public float getForwardsMovement() {
+        throw NotImplementedException.createByLazy(LivingEntity.class, "getForwardsMovement");
+    }
+
+    @Override
+    public void startUsingItem(@NotNull EquipmentSlot equipmentSlot) {
+        throw NotImplementedException.createByLazy(LivingEntity.class, "startUsingItem", EquipmentSlot.class);
+    }
+
+    @Override
+    public void completeUsingActiveItem() {
+        throw NotImplementedException.createByLazy(LivingEntity.class, "completeUsingActiveItem");
+    }
+
+    @Override
     public ItemStack getActiveItem() {
         throw NotImplementedException.createByLazy(LivingEntity.class, "getActiveItem");
     }
@@ -596,6 +679,31 @@ public abstract class AbstractLivingEntity<E extends Living> extends AbstractEnt
     @Override
     public void clearActiveItem() {
         throw NotImplementedException.createByLazy(LivingEntity.class, "clearActiveItem");
+    }
+
+    @Override
+    public int getActiveItemRemainingTime() {
+        throw NotImplementedException.createByLazy(LivingEntity.class, "getActiveItemRemainingTime");
+    }
+
+    @Override
+    public void setActiveItemRemainingTime(@Range(from = 0L, to = 2147483647L) int i) {
+        throw NotImplementedException.createByLazy(LivingEntity.class, "setActiveItemRemainingTime", int.class);
+    }
+
+    @Override
+    public boolean hasActiveItem() {
+        throw NotImplementedException.createByLazy(LivingEntity.class, "hasActiveItem");
+    }
+
+    @Override
+    public int getActiveItemUsedTime() {
+        throw NotImplementedException.createByLazy(LivingEntity.class, "getActiveItemUsedTime");
+    }
+
+    @Override
+    public @NotNull EquipmentSlot getActiveItemHand() {
+        throw NotImplementedException.createByLazy(LivingEntity.class, "getActiveItemHand");
     }
 
     @Override
@@ -641,5 +749,29 @@ public abstract class AbstractLivingEntity<E extends Living> extends AbstractEnt
     @Override
     public void setMemory(@NotNull MemoryKey arg0, Object arg1) {
         throw NotImplementedException.createByLazy(LivingEntity.class, "setMemory", MemoryKey.class, Object.class);
+    }
+
+
+    @Override
+    public void damage(double v, @NotNull DamageSource damageSource) {
+        this.spongeEntity().damage(v, ((SoakDamageSource) damageSource).spongeSource());
+    }
+
+    @Override
+    public void heal(double v, EntityRegainHealthEvent.RegainReason regainReason) {
+        //TODO regain
+        this.heal(v);
+    }
+
+    @Override
+    public <T extends Projectile> @NotNull T launchProjectile(@NotNull Class<? extends T> aClass, @Nullable Vector vector, @Nullable Consumer<? super T> consumer) {
+        if (consumer == null && vector == null) {
+            return launchProjectile(aClass);
+        }
+        var projectile = launchProjectile(aClass, vector);
+        if (consumer == null) {
+            consumer.accept(projectile);
+        }
+        return projectile;
     }
 }

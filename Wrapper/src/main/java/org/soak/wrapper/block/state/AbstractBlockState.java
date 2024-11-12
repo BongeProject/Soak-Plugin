@@ -35,13 +35,9 @@ import java.util.stream.Collectors;
 
 public abstract class AbstractBlockState implements BlockState {
 
+    private final LinkedBlockingQueue<KeyValuePair<?>> toApply = new LinkedBlockingQueue<>();
     private @Nullable ServerLocation location;
     private @NotNull org.spongepowered.api.block.BlockState state;
-    private final LinkedBlockingQueue<KeyValuePair<?>> toApply = new LinkedBlockingQueue<>();
-
-    protected abstract AbstractBlockState createCopy(@Nullable ServerLocation location, @NotNull org.spongepowered.api.block.BlockState state);
-
-    protected abstract void onPostApply(@NotNull ServerLocation location);
 
     public AbstractBlockState(@NotNull ServerLocation location) {
         this(location, location.block());
@@ -52,11 +48,22 @@ public abstract class AbstractBlockState implements BlockState {
         this.state = state;
     }
 
-    public @Nullable ServerLocation location(){
+    public static AbstractBlockState wrap(@Nullable ServerLocation location, org.spongepowered.api.block.BlockState state, boolean isSnapshot) {
+        if (state.get(Keys.SIGN_WAXED).isPresent()) {
+            return new SignBlockState(location, state, isSnapshot);
+        }
+        return new BasicBlockState(location, state);
+    }
+
+    protected abstract AbstractBlockState createCopy(@Nullable ServerLocation location, @NotNull org.spongepowered.api.block.BlockState state);
+
+    protected abstract void onPostApply(@NotNull ServerLocation location);
+
+    public @Nullable ServerLocation location() {
         return this.location;
     }
 
-    public @NotNull org.spongepowered.api.block.BlockState state(){
+    public @NotNull org.spongepowered.api.block.BlockState state() {
         return this.state;
     }
 
@@ -71,8 +78,18 @@ public abstract class AbstractBlockState implements BlockState {
     }
 
     @Override
+    public void setData(@NotNull MaterialData materialData) {
+        throw NotImplementedException.createByLazy(BlockState.class, "setData", MaterialData.class);
+    }
+
+    @Override
     public @NotNull BlockData getBlockData() {
         return SoakBlockData.internalCreateBlockData(this.state);
+    }
+
+    @Override
+    public void setBlockData(@NotNull BlockData blockData) {
+        this.state = ((AbstractBlockData) blockData).sponge();
     }
 
     @Override
@@ -98,6 +115,11 @@ public abstract class AbstractBlockState implements BlockState {
     @Override
     public @NotNull Material getType() {
         return Material.getBlockMaterial(this.state.type());
+    }
+
+    @Override
+    public void setType(@NotNull Material material) {
+        setBlockData(material.createBlockData());
     }
 
     @Override
@@ -139,21 +161,6 @@ public abstract class AbstractBlockState implements BlockState {
     public @NotNull Chunk getChunk() {
         var chunkPosition = this.location.chunkPosition();
         return getWorld().getChunkAt(chunkPosition.x(), chunkPosition.z());
-    }
-
-    @Override
-    public void setData(@NotNull MaterialData materialData) {
-        throw NotImplementedException.createByLazy(BlockState.class, "setData", MaterialData.class);
-    }
-
-    @Override
-    public void setBlockData(@NotNull BlockData blockData) {
-        this.state = ((AbstractBlockData) blockData).sponge();
-    }
-
-    @Override
-    public void setType(@NotNull Material material) {
-        setBlockData(material.createBlockData());
     }
 
     @Override
@@ -225,12 +232,5 @@ public abstract class AbstractBlockState implements BlockState {
     @Override
     public void removeMetadata(@NotNull String metadataKey, @NotNull Plugin owningPlugin) {
         throw NotImplementedException.createByLazy(AbstractBlockState.class, "metadataKey", String.class, Plugin.class);
-    }
-
-    public static AbstractBlockState wrap(@Nullable ServerLocation location, org.spongepowered.api.block.BlockState state) {
-        if (state.get(Keys.SIGN_LINES).isPresent()) {
-
-        }
-        return new BasicBlockState(location, state);
     }
 }

@@ -7,7 +7,9 @@ import org.bukkit.entity.LightningStrike;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.soak.WrapperManager;
 import org.soak.exception.NotImplementedException;
+import org.soak.plugin.SoakManager;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.data.Keys;
 import org.spongepowered.api.entity.weather.LightningBolt;
@@ -38,6 +40,16 @@ public class SoakLightningStrike extends AbstractEntity<LightningBolt> implement
     }
 
     @Override
+    public int getFlashes() {
+        throw NotImplementedException.createByLazy(LightningStrike.class, "getFlashes");
+    }
+
+    @Override
+    public void setFlashes(int i) {
+        throw NotImplementedException.createByLazy(LightningStrike.class, "setFlashes", int.class);
+    }
+
+    @Override
     public int getFlashCount() {
         throw NotImplementedException.createByLazy(LightningStrike.class, "getFlashCount");
     }
@@ -63,14 +75,20 @@ public class SoakLightningStrike extends AbstractEntity<LightningBolt> implement
     }
 
     @Override
-    public @Nullable Entity getCausingEntity() {
-        throw NotImplementedException.createByLazy(LightningStrike.class, "getCausingEntity");
+    public @Nullable Player getCausingPlayer() {
+        var opCreator = this.spongeEntity().creator();
+        return opCreator.flatMap(mut -> Sponge.server().player(mut.get())).map(player -> SoakManager.<WrapperManager>getManager().getMemoryStore().get(player)).orElse(null);
     }
 
     @Override
     public void setCausingPlayer(@Nullable Player player) {
         throw NotImplementedException.createByLazy(LightningStrike.class, "setCausingPlayer", Player.class);
 
+    }
+
+    @Override
+    public @Nullable Entity getCausingEntity() {
+        throw NotImplementedException.createByLazy(LightningStrike.class, "getCausingEntity");
     }
 
     @Override

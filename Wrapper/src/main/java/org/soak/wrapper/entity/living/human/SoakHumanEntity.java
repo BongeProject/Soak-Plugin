@@ -1,6 +1,8 @@
 package org.soak.wrapper.entity.living.human;
 
 import net.kyori.adventure.audience.Audience;
+import org.bukkit.block.Sign;
+import org.bukkit.block.sign.Side;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;

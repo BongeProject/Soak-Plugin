@@ -7,9 +7,10 @@ import org.jetbrains.annotations.Nullable;
 import org.soak.map.SoakColourMap;
 import org.spongepowered.api.data.Keys;
 import org.spongepowered.api.data.value.ValueContainer;
+import org.spongepowered.api.item.inventory.ItemStackLike;
 
 public class SoakLeatherArmorMeta extends AbstractItemMeta implements LeatherArmorMeta {
-    public SoakLeatherArmorMeta(ValueContainer container) {
+    public SoakLeatherArmorMeta(ItemStackLike container) {
         super(container);
     }
 
@@ -35,5 +36,10 @@ public class SoakLeatherArmorMeta extends AbstractItemMeta implements LeatherArm
     @Override
     public @NotNull SoakLeatherArmorMeta clone() {
         return new SoakLeatherArmorMeta(this.container);
+    }
+
+    @Override
+    public boolean isDyed() {
+        return this.container.get(Keys.COLOR).isPresent();
     }
 }

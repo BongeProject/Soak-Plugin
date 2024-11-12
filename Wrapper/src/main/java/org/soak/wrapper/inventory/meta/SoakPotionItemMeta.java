@@ -5,15 +5,14 @@ import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.potion.PotionType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.soak.exception.NotImplementedException;
 import org.soak.map.SoakColourMap;
 import org.soak.map.item.SoakPotionEffectMap;
 import org.spongepowered.api.data.Keys;
-import org.spongepowered.api.data.value.ValueContainer;
-import org.spongepowered.api.item.inventory.ItemStack;
-import org.spongepowered.api.item.inventory.ItemStackSnapshot;
+import org.spongepowered.api.item.inventory.ItemStackLike;
 
 import java.util.Collections;
 import java.util.LinkedList;
@@ -23,16 +22,7 @@ import java.util.stream.Collectors;
 
 public class SoakPotionItemMeta extends AbstractItemMeta implements PotionMeta {
 
-    public SoakPotionItemMeta(ItemStackSnapshot snapshot) {
-        super(snapshot);
-    }
-
-    public SoakPotionItemMeta(ItemStack stack) {
-        super(stack);
-    }
-
-    @Deprecated
-    public SoakPotionItemMeta(ValueContainer container) {
+    public SoakPotionItemMeta(ItemStackLike container) {
         super(container);
     }
 
@@ -50,6 +40,21 @@ public class SoakPotionItemMeta extends AbstractItemMeta implements PotionMeta {
     public void setBasePotionData(PotionData arg0) {
         //TODO - find a better way to do this
         this.set(Keys.POTION_TYPE, SoakPotionEffectMap.toSponge(arg0.getType()));
+    }
+
+    @Override
+    public @Nullable PotionType getBasePotionType() {
+        throw NotImplementedException.createByLazy(PotionMeta.class, "getBasePotionType");
+    }
+
+    @Override
+    public void setBasePotionType(@Nullable PotionType potionType) {
+        throw NotImplementedException.createByLazy(PotionMeta.class, "setBasePotionType", PotionType.class);
+    }
+
+    @Override
+    public boolean hasBasePotionType() {
+        throw NotImplementedException.createByLazy(PotionMeta.class, "hasBasePotionType");
     }
 
     @Override

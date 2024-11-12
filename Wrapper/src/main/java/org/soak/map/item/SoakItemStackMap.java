@@ -29,14 +29,12 @@ public class SoakItemStackMap {
 
     public static ItemStack toSponge(@NotNull ItemMeta meta) {
         return toSponge(meta,
-                meta1 -> meta1.asStack()
-                        .orElseThrow(() -> new RuntimeException("Could not convert ItemMeta is into ItemStack")));
+                AbstractItemMeta::asStack);
     }
 
     public static ItemStackSnapshot toSpongeSnapshot(@NotNull ItemMeta meta) {
         return toSponge(meta,
-                meta1 -> meta1.asSnapshot()
-                        .orElseThrow(() -> new RuntimeException("Could not convert ItemMeta is into ItemStackSnapshot")));
+                AbstractItemMeta::asSnapshot);
     }
 
     public static ItemStack toSponge(@Nullable org.bukkit.inventory.ItemStack stack) {
@@ -50,14 +48,12 @@ public class SoakItemStackMap {
                             .name() + " is not an item")), stack.getAmount());
         }
         return toSponge(stack,
-                meta1 -> meta1.asStack()
-                        .orElseThrow(() -> new RuntimeException("Could not convert ItemMeta is into ItemStack")));
+                AbstractItemMeta::asStack);
     }
 
     public static ItemStackSnapshot toSpongeSnapshot(@NotNull org.bukkit.inventory.ItemStack meta) {
         return toSponge(meta,
-                meta1 -> meta1.asSnapshot()
-                        .orElseThrow(() -> new RuntimeException("Could not convert ItemMeta is into ItemStack")));
+                AbstractItemMeta::asSnapshot);
     }
 
     private static <VC extends ItemStackLike> VC toSponge(@NotNull ItemMeta meta, @NotNull Function<AbstractItemMeta, VC> spongeType) {

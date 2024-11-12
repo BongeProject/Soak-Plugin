@@ -14,6 +14,7 @@ import org.spongepowered.api.data.DataHolder;
 
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public abstract class AbstractPersistentData<DH extends DataHolder> implements PersistentDataContainer {
 
@@ -25,6 +26,11 @@ public abstract class AbstractPersistentData<DH extends DataHolder> implements P
 
     public DH getHolder() {
         return this.holder;
+    }
+
+    @Override
+    public void copyTo(PersistentDataContainer persistentDataContainer, boolean replace) {
+        throw NotImplementedException.createByLazy(PersistentDataContainer.class, "copyTo", PersistentDataContainer.class, boolean.class);
     }
 
     @Override

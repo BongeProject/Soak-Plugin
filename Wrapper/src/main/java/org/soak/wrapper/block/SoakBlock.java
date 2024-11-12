@@ -23,7 +23,6 @@ import org.soak.map.item.SoakItemStackMap;
 import org.soak.plugin.SoakManager;
 import org.soak.wrapper.block.data.CommonBlockData;
 import org.soak.wrapper.block.state.AbstractBlockState;
-import org.soak.wrapper.block.state.generic.GenericBlockSnapshotState;
 import org.soak.wrapper.world.SoakWorld;
 import org.spongepowered.api.data.Keys;
 import org.spongepowered.api.world.BlockChangeFlags;
@@ -294,9 +293,7 @@ public class SoakBlock extends AbstractBlock<ServerLocation> {
 
     @Override
     public BlockState getState() {
-        return this.block.blockEntity()
-                .map(entity -> (BlockState) AbstractBlockState.wrap(entity, false))
-                .orElseGet(() -> new GenericBlockSnapshotState(this.block.createSnapshot()));
+        return AbstractBlockState.wrap(this.spongeLocation(), this.block.block(), false);
     }
 
     @Override

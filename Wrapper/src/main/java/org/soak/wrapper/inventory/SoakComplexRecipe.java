@@ -7,6 +7,7 @@ import org.jetbrains.annotations.NotNull;
 import org.soak.map.SoakResourceKeyMap;
 import org.soak.map.item.SoakItemStackMap;
 import org.spongepowered.api.item.recipe.crafting.SpecialCraftingRecipe;
+import org.spongepowered.api.registry.RegistryTypes;
 
 public class SoakComplexRecipe implements ComplexRecipe {
 
@@ -22,7 +23,7 @@ public class SoakComplexRecipe implements ComplexRecipe {
 
     @Override
     public @NotNull NamespacedKey getKey() {
-        return SoakResourceKeyMap.mapToBukkit(this.recipe.key());
+        return SoakResourceKeyMap.mapToBukkit(this.recipe.type().key(RegistryTypes.RECIPE_TYPE));
     }
 
     @Override

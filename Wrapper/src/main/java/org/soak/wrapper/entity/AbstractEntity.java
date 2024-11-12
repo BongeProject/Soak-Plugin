@@ -1,6 +1,7 @@
 package org.soak.wrapper.entity;
 
 import io.papermc.paper.entity.TeleportFlag;
+import io.papermc.paper.threadedregions.scheduler.EntityScheduler;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import org.bukkit.*;
@@ -16,6 +17,7 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.mose.collection.stream.builder.CollectionStreamBuilder;
 import org.soak.WrapperManager;
 import org.soak.data.sponge.SoakKeys;
@@ -24,6 +26,7 @@ import org.soak.map.SoakDirectionMap;
 import org.soak.map.SoakMessageMap;
 import org.soak.map.SoakVectorMap;
 import org.soak.plugin.SoakManager;
+import org.soak.utils.GeneralHelper;
 import org.soak.utils.ListMappingUtils;
 import org.soak.wrapper.command.SoakCommandSender;
 import org.soak.wrapper.entity.living.AbstractLivingEntity;
@@ -48,6 +51,7 @@ import org.spongepowered.api.world.weather.WeatherTypes;
 import org.spongepowered.math.vector.Vector3d;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
@@ -687,5 +691,117 @@ public abstract class AbstractEntity<E extends org.spongepowered.api.entity.Enti
     @Override
     public @NotNull PersistentDataContainer getPersistentDataContainer() {
         return new SoakMutablePersistentDataContainer<>(this.entity);
+    }
+
+    @Override
+    public @NotNull CompletableFuture<Boolean> teleportAsync(@NotNull Location location, @NotNull PlayerTeleportEvent.TeleportCause teleportCause, @NotNull TeleportFlag @NotNull ... teleportFlags) {
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+        var plugin = GeneralHelper.fromStackTrace();
+
+        Sponge.server().scheduler().executor(plugin).submit(() -> {
+            boolean tel = teleport(location, teleportCause, teleportFlags);
+            future.complete(tel);
+        });
+        return future;
+    }
+
+    @Override
+    public void setInvisible(boolean b) {
+
+    }
+
+    @Override
+    public boolean isInvisible() {
+        return false;
+    }
+
+    @Override
+    public void setNoPhysics(boolean b) {
+
+    }
+
+    @Override
+    public boolean hasNoPhysics() {
+        return false;
+    }
+
+    @Override
+    public @NotNull Set<Player> getTrackedBy() {
+        return Set.of();
+    }
+
+    @Override
+    public void setPose(@NotNull Pose pose, boolean b) {
+
+    }
+
+    @Override
+    public boolean hasFixedPose() {
+        return false;
+    }
+
+    @Override
+    public boolean isInWorld() {
+        return false;
+    }
+
+    @Override
+    public @Nullable String getAsString() {
+        return "";
+    }
+
+    @Override
+    public @Nullable EntitySnapshot createSnapshot() {
+        return null;
+    }
+
+    @Override
+    public org.bukkit.entity.@NotNull Entity copy() {
+        return null;
+    }
+
+    @Override
+    public org.bukkit.entity.@NotNull Entity copy(@NotNull Location location) {
+        return null;
+    }
+
+    @Override
+    public double getX() {
+        return 0;
+    }
+
+    @Override
+    public double getY() {
+        return 0;
+    }
+
+    @Override
+    public double getZ() {
+        return 0;
+    }
+
+    @Override
+    public float getPitch() {
+        return 0;
+    }
+
+    @Override
+    public float getYaw() {
+        return 0;
+    }
+
+    @Override
+    public @NotNull EntityScheduler getScheduler() {
+        return null;
+    }
+
+    @Override
+    public @NotNull String getScoreboardEntryName() {
+        return "";
+    }
+
+    @Override
+    public void broadcastHurtAnimation(@NotNull Collection<Player> collection) {
+
     }
 }

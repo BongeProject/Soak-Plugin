@@ -10,9 +10,7 @@ import org.jetbrains.annotations.Nullable;
 import org.soak.exception.NotImplementedException;
 import org.soak.wrapper.SoakOfflinePlayer;
 import org.spongepowered.api.data.Keys;
-import org.spongepowered.api.data.value.ValueContainer;
-import org.spongepowered.api.item.inventory.ItemStack;
-import org.spongepowered.api.item.inventory.ItemStackSnapshot;
+import org.spongepowered.api.item.inventory.ItemStackLike;
 import org.spongepowered.api.profile.GameProfile;
 import org.spongepowered.api.profile.property.ProfileProperty;
 
@@ -20,18 +18,7 @@ import java.util.Optional;
 
 public class SoakSkullMeta extends AbstractItemMeta implements SkullMeta {
 
-    public SoakSkullMeta(ItemStack stack) {
-        super(stack);
-    }
-
-    public SoakSkullMeta(ItemStackSnapshot stack) {
-        super(stack);
-    }
-
-    //shouldn't use if the type is known
-    @SuppressWarnings("DeprecatedIsStillUsed")
-    @Deprecated
-    public SoakSkullMeta(ValueContainer container) {
+    public SoakSkullMeta(ItemStackLike container) {
         super(container);
     }
 

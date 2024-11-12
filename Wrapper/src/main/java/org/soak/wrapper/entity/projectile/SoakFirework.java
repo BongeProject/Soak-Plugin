@@ -26,7 +26,8 @@ public class SoakFirework extends AbstractProjectile<FireworkRocket> implements 
     @Override
     public @NotNull FireworkMeta getFireworkMeta() {
         //TODO double check this
-        return new SoakFireworkMeta(this.spongeEntity());
+        throw NotImplementedException.createByLazy(Firework.class, "getFireworkMeta");
+        //return new SoakFireworkMeta(this.spongeEntity());
     }
 
     @Override

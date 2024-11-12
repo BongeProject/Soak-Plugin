@@ -1,5 +1,10 @@
 package org.soak.wrapper.block.data.type;
 
+import org.bukkit.Color;
+import org.bukkit.Location;
+import org.bukkit.block.data.BlockData;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.util.VoxelShape;
 import org.jetbrains.annotations.NotNull;
 import org.soak.wrapper.block.data.AbstractBlockData;
 import org.soak.wrapper.block.data.SoakFourDirectional;

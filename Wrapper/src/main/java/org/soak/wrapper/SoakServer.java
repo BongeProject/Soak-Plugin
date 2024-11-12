@@ -160,12 +160,16 @@ public abstract class SoakServer implements SimpServer {
         return this.serverSupplier.get();
     }
 
-
+    @Override
+    public @NotNull <T extends Keyed> Iterable<Tag<T>> getTags(@NotNull String registry, @NotNull Class<T> clazz) {
+        throw NotImplementedException.createByLazy(Server.class, "getTags", String.class, Class.class);
+    }
 
     @Override
     public <T extends Keyed> Tag<T> getTag(@NotNull String registry, @NotNull NamespacedKey tag, @NotNull Class<T> clazz) {
         ResourceKey key = SoakResourceKeyMap.mapToSponge(tag);
-        if (clazz.getName().equals(Material.class.getName()) && registry.equals(Tag.REGISTRY_BLOCKS)) {
+        boolean classMatch = clazz.getName().equals(Material.class.getName());
+        if (classMatch && registry.equals(Tag.REGISTRY_BLOCKS)) {
             var opTag = FakeRegistryHelper.<org.spongepowered.api.tag.Tag<BlockType>>getFields(BlockTypeTags.class, org.spongepowered.api.tag.Tag.class)
                     .stream()
                     .filter(spongeTag -> spongeTag.key().equals(key))
@@ -174,7 +178,7 @@ public abstract class SoakServer implements SimpServer {
                 return (Tag<T>) (Object) new MaterialSetTag(tag, TagHelper.getBlockTypes(opTag.get()).map(Material::getBlockMaterial).collect(Collectors.toList()));
             }
         }
-        if (clazz.getName().equals(Material.class.getName()) && registry.equals(Tag.REGISTRY_ITEMS)) {
+        if (classMatch && registry.equals(Tag.REGISTRY_ITEMS)) {
             var opTag = FakeRegistryHelper.<org.spongepowered.api.tag.Tag<ItemType>>getFields(ItemTypeTags.class, org.spongepowered.api.tag.Tag.class)
                     .stream()
                     .filter(spongeTag -> spongeTag.key().equals(key))
@@ -953,7 +957,7 @@ public abstract class SoakServer implements SimpServer {
     private Inventory createChestInventory(InventoryHolder holder, int size, @Nullable Component title) {
         int rows = (size / 9);
         var containerType = InventoryHelper.toChestContainerType(rows);
-        var plugin = GenericHelper.fromStackTrace();
+        var plugin = GeneralHelper.fromStackTrace();
         var inventory = ViewableInventory.builder().type(containerType).completeStructure().plugin(plugin).build();
         //TODO holder
         var bukkitInv = new SoakInventory<>(inventory);
@@ -1193,11 +1197,6 @@ public abstract class SoakServer implements SimpServer {
         }
         var blockState = BlockState.fromString(s);
         return new SoakBlockData(blockState);
-    }
-
-    @Override
-    public @NotNull <T extends Keyed> Iterable<Tag<T>> getTags(@NotNull String registry, @NotNull Class<T> clazz) {
-        throw NotImplementedException.createByLazy(Server.class, "getTags", String.class, Class.class);
     }
 
     @Override

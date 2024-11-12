@@ -9,7 +9,6 @@ import org.jetbrains.annotations.Nullable;
 import org.soak.exception.NotImplementedException;
 import org.soak.map.SoakLocationMap;
 import org.soak.wrapper.entity.SoakEntity;
-import org.spongepowered.api.world.World;
 import org.spongepowered.api.world.server.ServerWorld;
 
 public class SoakDamageSource implements DamageSource {
@@ -20,6 +19,10 @@ public class SoakDamageSource implements DamageSource {
     public SoakDamageSource(org.spongepowered.api.event.cause.entity.damage.source.DamageSource source, ServerWorld world) {
         this.source = source;
         this.world = world;
+    }
+
+    public org.spongepowered.api.event.cause.entity.damage.source.DamageSource spongeSource() {
+        return this.source;
     }
 
     @Override

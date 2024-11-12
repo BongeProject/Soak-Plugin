@@ -1,11 +1,14 @@
 package org.soak.wrapper.inventory;
 
+import io.papermc.paper.registry.set.RegistryKeySet;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.hover.content.Content;
 import org.bukkit.Color;
 import org.bukkit.Material;
+import org.bukkit.World;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemFactory;
@@ -19,7 +22,6 @@ import org.soak.map.item.SoakItemStackMap;
 import org.soak.wrapper.inventory.meta.AbstractItemMeta;
 import org.spongepowered.api.item.ItemType;
 import org.spongepowered.api.item.inventory.ItemStackComparators;
-import org.spongepowered.api.item.inventory.ItemStackSnapshot;
 
 import java.util.Objects;
 import java.util.Random;
@@ -107,34 +109,36 @@ public class SoakItemFactory implements ItemFactory {
         return asMetaFor(arg0, new ItemStack(arg1));
     }
 
-    @Override
+    /*@Override
     public @NotNull Material updateMaterial(@NotNull ItemMeta arg0, @NotNull Material arg1) {
-        if (!(arg0 instanceof AbstractItemMeta)) {
+        if (!(arg0 instanceof AbstractItemMeta abstractMeta)) {
             throw new RuntimeException("ItemMeta is not extending AbstractItemMeta (" + arg0.getClass()
                     .getName() + ")");
         }
-        var abstractMeta = (AbstractItemMeta) arg0;
+        ItemType type = arg1.asItem().orElseThrow(() -> new RuntimeException("Material is not a item"));
+
         abstractMeta.manipulate(container -> {
-            ItemType type = arg1.asItem().orElseThrow(() -> new RuntimeException("Material is not a item"));
-            if (container instanceof org.spongepowered.api.item.inventory.ItemStack) {
-                var stack = (org.spongepowered.api.item.inventory.ItemStack) container;
-                return org.spongepowered.api.item.inventory.ItemStack.builder()
-                        .fromItemStack(stack)
-                        .itemType(type)
-                        .build();
-            }
-            return org.spongepowered.api.item.inventory.ItemStack.builder()
-                    .fromSnapshot((ItemStackSnapshot) container)
+            var stack = org.spongepowered.api.item.inventory.ItemStack.builder()
+                    .fromSnapshot(container.asImmutable())
                     .itemType(type)
-                    .build()
-                    .createSnapshot();
+                    .build();
+            if (container instanceof org.spongepowered.api.item.inventory.ItemStack) {
+                return stack;
+            }
+            return stack
+                    .asImmutable();
         });
         return arg1;
-    }
+    }*/
 
     @Override
     public @NotNull ItemStack enchantWithLevels(@NotNull ItemStack itemStack, @Range(from = 1L, to = 30L) int i, boolean b, @NotNull Random random) {
         throw NotImplementedException.createByLazy(ItemFactory.class, "enchantWithLevels", ItemStack.class, int.class, boolean.class, Random.class);
+    }
+
+    @Override
+    public @NotNull ItemStack enchantWithLevels(@NotNull ItemStack itemStack, @Range(from = 1L, to = 30L) int i, @NotNull RegistryKeySet<@NotNull Enchantment> registryKeySet, @NotNull Random random) {
+        throw NotImplementedException.createByLazy(ItemFactory.class, "enchantWithLevels", ItemStack.class, int.class, RegistryKeySet.class, Random.class);
     }
 
     @Override
@@ -175,8 +179,23 @@ public class SoakItemFactory implements ItemFactory {
     }
 
     @Override
-    public @Nullable ItemStack getSpawnEgg(@Nullable EntityType entityType) {
+    public @Nullable Material getSpawnEgg(@Nullable EntityType entityType) {
         throw NotImplementedException.createByLazy(ItemFactory.class, "getSpawnEgg", EntityType.class);
+    }
+
+    @Override
+    public @NotNull ItemStack enchantItem(@NotNull Entity entity, @NotNull ItemStack itemStack, int i, boolean b) {
+        throw NotImplementedException.createByLazy(ItemFactory.class, "enchantItem", Entity.class, ItemStack.class, int.class, boolean.class);
+    }
+
+    @Override
+    public @NotNull ItemStack enchantItem(@NotNull World world, @NotNull ItemStack itemStack, int i, boolean b) {
+        throw NotImplementedException.createByLazy(ItemFactory.class, "enchantItem", World.class, ItemStack.class, int.class, boolean.class);
+    }
+
+    @Override
+    public @NotNull ItemStack enchantItem(@NotNull ItemStack itemStack, int i, boolean b) {
+        throw NotImplementedException.createByLazy(ItemFactory.class, "enchantItem", ItemStack.class, int.class, boolean.class);
     }
 
     @Deprecated

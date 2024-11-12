@@ -120,7 +120,7 @@ public class SoakBukkitScheduler implements BukkitScheduler {
     }
 
     @Override
-    public void runTask(@NotNull Plugin plugin, @NotNull Consumer<BukkitTask> task) throws IllegalArgumentException {
+    public void runTask(@NotNull Plugin plugin, @NotNull Consumer<? super BukkitTask> task) throws IllegalArgumentException {
         throw NotImplementedException.createByLazy(BukkitScheduler.class, "runTask", Plugin.class, Consumer.class);
     }
 
@@ -131,7 +131,7 @@ public class SoakBukkitScheduler implements BukkitScheduler {
     }
 
     @Override
-    public void runTaskAsynchronously(@NotNull Plugin plugin, @NotNull Consumer<BukkitTask> task) throws IllegalArgumentException {
+    public void runTaskAsynchronously(@NotNull Plugin plugin, @NotNull Consumer<? super BukkitTask> task) throws IllegalArgumentException {
         throw NotImplementedException.createByLazy(BukkitScheduler.class, "runTaskAsynchronously", Plugin.class, Consumer.class);
     }
 
@@ -152,7 +152,7 @@ public class SoakBukkitScheduler implements BukkitScheduler {
     }
 
     @Override
-    public void runTaskLater(@NotNull Plugin plugin, @NotNull Consumer<BukkitTask> task, long delay) throws IllegalArgumentException {
+    public void runTaskLater(@NotNull Plugin plugin, @NotNull Consumer<? super BukkitTask> task, long delay) throws IllegalArgumentException {
         throw NotImplementedException.createByLazy(BukkitScheduler.class, "runTaskLater", Plugin.class, Consumer.class, long.class);
     }
 
@@ -174,12 +174,12 @@ public class SoakBukkitScheduler implements BukkitScheduler {
     }
 
     @Override
-    public void runTaskLaterAsynchronously(@NotNull Plugin plugin, @NotNull Consumer<BukkitTask> task, long delay) throws IllegalArgumentException {
+    public void runTaskLaterAsynchronously(@NotNull Plugin plugin, @NotNull Consumer<? super BukkitTask> task, long delay) throws IllegalArgumentException {
         throw NotImplementedException.createByLazy(BukkitScheduler.class, "runTaskLaterAsynchronously", Plugin.class, Consumer.class, long.class);
     }
 
     @Override
-    public void runTaskTimer(@NotNull Plugin plugin, @NotNull Consumer<BukkitTask> task, long delay, long period) throws IllegalArgumentException {
+    public void runTaskTimer(@NotNull Plugin plugin, @NotNull Consumer<? super BukkitTask> task, long delay, long period) throws IllegalArgumentException {
         throw NotImplementedException.createByLazy(BukkitScheduler.class, "runTaskTimer", Plugin.class, Consumer.class, long.class, long.class);
     }
 
@@ -222,7 +222,7 @@ public class SoakBukkitScheduler implements BukkitScheduler {
     }
 
     @Override
-    public void runTaskTimerAsynchronously(@NotNull Plugin plugin, @NotNull Consumer<BukkitTask> task, long delay, long period) throws IllegalArgumentException {
+    public void runTaskTimerAsynchronously(@NotNull Plugin plugin, @NotNull Consumer<? super BukkitTask> task, long delay, long period) throws IllegalArgumentException {
         throw NotImplementedException.createByLazy(BukkitScheduler.class, "runTaskTimerAsynchronously", Plugin.class, Consumer.class, long.class, long.class);
     }
 

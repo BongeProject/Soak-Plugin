@@ -21,7 +21,7 @@ import org.soak.WrapperManager;
 import org.soak.exception.NotImplementedException;
 import org.soak.plugin.SoakManager;
 import org.soak.wrapper.block.data.CommonBlockData;
-import org.soak.wrapper.block.state.AbstractBlockSnapshotState;
+import org.soak.wrapper.block.state.AbstractBlockState;
 import org.soak.wrapper.world.SoakWorld;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
@@ -291,7 +291,7 @@ public class SoakBlockSnapshot extends AbstractBlock<BlockSnapshot> {
     //creating a tile entity from a snapshot is difficult. Some data specifically for tile entities is exposed by the snapshot, but not all
     @Override
     public @NotNull BlockState getState() {
-        return AbstractBlockSnapshotState.wrap(this.sponge());
+        return AbstractBlockState.wrap(this.spongeLocation(), this.sponge().state(), true);
     }
 
     @Override

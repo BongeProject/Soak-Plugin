@@ -11,8 +11,12 @@ import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemFlag;
+import org.bukkit.inventory.ItemRarity;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.components.FoodComponent;
+import org.bukkit.inventory.meta.components.JukeboxPlayableComponent;
+import org.bukkit.inventory.meta.components.ToolComponent;
 import org.bukkit.inventory.meta.tags.CustomItemTagContainer;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.jetbrains.annotations.NotNull;
@@ -22,7 +26,6 @@ import org.soak.exception.NotImplementedException;
 import org.soak.map.SoakMessageMap;
 import org.soak.map.item.SoakEnchantmentTypeMap;
 import org.soak.map.item.SoakItemFlagMap;
-import org.soak.utils.DataHelper;
 import org.soak.wrapper.persistence.SoakImmutablePersistentDataContainer;
 import org.soak.wrapper.persistence.SoakMutablePersistentDataContainer;
 import org.spongepowered.api.data.DataHolder;
@@ -31,12 +34,11 @@ import org.spongepowered.api.data.Keys;
 import org.spongepowered.api.data.value.ListValue;
 import org.spongepowered.api.data.value.SetValue;
 import org.spongepowered.api.data.value.Value;
-import org.spongepowered.api.data.value.ValueContainer;
-import org.spongepowered.api.entity.Entity;
-import org.spongepowered.api.item.ItemType;
 import org.spongepowered.api.item.enchantment.EnchantmentType;
 import org.spongepowered.api.item.inventory.ItemStack;
+import org.spongepowered.api.item.inventory.ItemStackLike;
 import org.spongepowered.api.item.inventory.ItemStackSnapshot;
+import org.spongepowered.api.registry.RegistryTypes;
 
 import java.util.*;
 import java.util.function.Function;
@@ -44,17 +46,10 @@ import java.util.stream.Collectors;
 
 public abstract class AbstractItemMeta implements ItemMeta, Damageable {
 
-    protected ValueContainer container;
+    protected ItemStackLike container;
 
-    protected AbstractItemMeta(ValueContainer container) {
-        if (!(container instanceof ItemStack || container instanceof ItemStackSnapshot || container instanceof Entity)) {
-            throw new RuntimeException("Must be either a ItemStack or ItemStackSnapshot");
-        }
+    protected AbstractItemMeta(ItemStackLike container) {
         this.container = container;
-    }
-
-    public void manipulate(Function<ValueContainer, ValueContainer> function) {
-        this.container = function.apply(this.container);
     }
 
     public boolean isSnapshot() {
@@ -66,46 +61,15 @@ public abstract class AbstractItemMeta implements ItemMeta, Damageable {
             throw new RuntimeException("ItemMeta must implement AbstractItemMeta");
         }
         var into = (AbstractItemMeta) meta;
-        if (into.container instanceof ItemStack) {
-            this.container = DataHelper.copyInto((ItemStack) this.container,
-                    this.asSnapshot().orElseThrow(() -> new RuntimeException("Failed check")));
-            return;
-        }
-        if (into.container instanceof Entity) {
-            this.container = DataHelper.copyInto((Entity) into.container, (DataHolder) this.container);
-        }
-        this.container = DataHelper.copyInto((ItemStackSnapshot) into.container,
-                this.asSnapshot().orElseThrow(() -> new RuntimeException("Failed checks")));
+        into.container = this.container.copy();
     }
 
-    public Optional<ItemStack> asStack() {
-        if (this.container instanceof ItemStack) {
-            return Optional.of((ItemStack) this.container);
-        }
-        if (this.container instanceof ItemStackSnapshot) {
-            return Optional.of(((ItemStackSnapshot) this.container).createStack());
-        }
-        return Optional.empty();
+    public ItemStack asStack() {
+        return this.container.asMutable();
     }
 
-    public Optional<ItemStackSnapshot> asSnapshot() {
-        if (this.container instanceof ItemStack) {
-            return Optional.of(((ItemStack) this.container).createSnapshot());
-        }
-        if (this.container instanceof ItemStackSnapshot) {
-            return Optional.of((ItemStackSnapshot) this.container);
-        }
-        return Optional.empty();
-    }
-
-    protected DataHolder.Immutable<?> copyToImmutable() {
-        if (this.container instanceof ItemStack) {
-            return ((ItemStack) this.container).createSnapshot();
-        }
-        if (this.container instanceof ItemStackSnapshot) {
-            return ((ItemStackSnapshot) this.container).copy();
-        }
-        return ((Entity) this.container).createSnapshot();
+    public ItemStackSnapshot asSnapshot() {
+        return this.container.asImmutable();
     }
 
     protected <T> void set(@NotNull Key<Value<T>> key, @Nullable T value) throws RuntimeException {
@@ -117,13 +81,13 @@ public abstract class AbstractItemMeta implements ItemMeta, Damageable {
             ((DataHolder.Mutable) this.container).offer(key, value);
             return;
         }
-        var opStack = ((DataHolder.Immutable) this.container).with(key, value);
+        var opStack = ((ItemStackSnapshot) this.container).with(key, value);
         if (opStack.isEmpty()) {
             throw new RuntimeException("Key of " + key.key()
                     .formatted() + " is not supported with ItemStackSnapshot");
         }
 
-        this.container = (ValueContainer) opStack.get();
+        this.container = opStack.get();
     }
 
     protected <T> void setList(@NotNull Key<ListValue<T>> key, @Nullable List<T> value) {
@@ -135,7 +99,7 @@ public abstract class AbstractItemMeta implements ItemMeta, Damageable {
             ((DataHolder.Mutable) this.container).offer(key, value);
             return;
         }
-        this.container = ((DataHolder.Immutable<?>) this.container).with(key, value)
+        this.container = ((ItemStackSnapshot) this.container).with(key, value)
                 .orElseThrow(() -> new RuntimeException("Key of " + key.key()
                         .formatted() + " is not supported with ItemStackSnapshot"));
     }
@@ -149,16 +113,9 @@ public abstract class AbstractItemMeta implements ItemMeta, Damageable {
             ((DataHolder.Mutable) this.container).offer(key, value);
             return;
         }
-        this.container = ((DataHolder.Immutable<?>) this.container).with(key, value)
+        this.container = ((ItemStackSnapshot) this.container).with(key, value)
                 .orElseThrow(() -> new RuntimeException("Key of " + key.key()
                         .formatted() + " is not supported with ItemStackSnapshot"));
-    }
-
-    private ItemType type() {
-        if (this.container instanceof ItemStack) {
-            return ((ItemStack) this.container).type();
-        }
-        return ((ItemStackSnapshot) this.container).type();
     }
 
     protected void remove(@NotNull Key<?> key) {
@@ -190,7 +147,7 @@ public abstract class AbstractItemMeta implements ItemMeta, Damageable {
     public @NotNull String getDisplayName() {
         Component displayName = displayName();
         if (displayName == null) {
-            displayName = this.type().asComponent();
+            displayName = this.container.type().asComponent();
         }
         return SoakMessageMap.mapToBukkit(displayName);
     }
@@ -501,7 +458,12 @@ public abstract class AbstractItemMeta implements ItemMeta, Damageable {
 
     @Override
     public void setCanDestroy(Set<Material> canDestroy) {
-        setSet(Keys.BREAKABLE_BLOCK_TYPES, canDestroy.stream().map(mat -> mat.asBlock()).filter(op -> op.isPresent()).map(op -> op.get()).collect(Collectors.toSet()));
+        setSet(Keys.BREAKABLE_BLOCK_TYPES, canDestroy
+                .stream()
+                .map(Material::asBlock)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toSet()));
     }
 
     @Override
@@ -511,7 +473,12 @@ public abstract class AbstractItemMeta implements ItemMeta, Damageable {
 
     @Override
     public void setCanPlaceOn(Set<Material> canPlaceOn) {
-        setSet(Keys.PLACEABLE_BLOCK_TYPES, canPlaceOn.stream().map(mat -> mat.asBlock()).filter(op -> op.isPresent()).map(op -> op.get()).collect(Collectors.toSet()));
+        setSet(Keys.PLACEABLE_BLOCK_TYPES, canPlaceOn
+                .stream()
+                .map(Material::asBlock)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toSet()));
     }
 
     @Override
@@ -547,8 +514,9 @@ public abstract class AbstractItemMeta implements ItemMeta, Damageable {
 
     @Override
     public @NotNull Map<String, Object> serialize() {
-        var container = this.asSnapshot().orElseGet(() -> this.asStack().map(ItemStack::createSnapshot).orElseThrow(() -> new IllegalStateException("Unknown mapping"))).toContainer();
+        var container = this.asSnapshot();
         return container
+                .toContainer()
                 .values(true)
                 .entrySet()
                 .stream()
@@ -590,5 +558,183 @@ public abstract class AbstractItemMeta implements ItemMeta, Damageable {
     @Override
     public @NotNull String getAsString() {
         throw NotImplementedException.createByLazy(ItemMeta.class, "getAsString");
+    }
+
+    @Override
+    public boolean hasDamageValue() {
+        throw NotImplementedException.createByLazy(ItemMeta.class, "hasDamageValue");
+    }
+
+    @Override
+    public void resetDamage() {
+        throw NotImplementedException.createByLazy(ItemMeta.class, "resetDamage");
+    }
+
+    @Override
+    public boolean hasMaxDamage() {
+        throw NotImplementedException.createByLazy(ItemMeta.class, "hasMaxDamage");
+    }
+
+    @Override
+    public int getMaxDamage() {
+        throw NotImplementedException.createByLazy(ItemMeta.class, "getMaxDamage");
+    }
+
+    @Override
+    public void setMaxDamage(@Nullable Integer integer) {
+        throw NotImplementedException.createByLazy(ItemMeta.class, "setMaxDamage", Integer.class);
+    }
+
+    public void manipulate(Function<ItemStackLike, ItemStackLike> to) {
+        this.container = to.apply(this.container);
+    }
+
+    @Override
+    public boolean hasItemName() {
+        return this.container.get(Keys.ITEM_NAME).isPresent();
+    }
+
+    @Override
+    public @NotNull Component itemName() {
+        return this.container.get(Keys.ITEM_NAME).orElseThrow();
+    }
+
+    @Override
+    public void itemName(@Nullable Component component) {
+        set(Keys.ITEM_NAME, component);
+    }
+
+    @Override
+    public @NotNull String getItemName() {
+        return SoakMessageMap.mapToBukkit(itemName());
+    }
+
+    @Override
+    public void setItemName(@Nullable String s) {
+        if (s == null) {
+            itemName(null);
+        }
+        itemName(SoakMessageMap.toComponent(s));
+    }
+
+    @Override
+    public void removeEnchantments() {
+        setList(Keys.APPLIED_ENCHANTMENTS, Collections.emptyList());
+        setList(Keys.STORED_ENCHANTMENTS, Collections.emptyList());
+    }
+
+    @Override
+    public boolean isHideTooltip() {
+        return this.container.get(Keys.HIDE_TOOLTIP).orElse(false);
+    }
+
+    @Override
+    public void setHideTooltip(boolean b) {
+        set(Keys.HIDE_TOOLTIP, b);
+    }
+
+    @Override
+    public boolean hasEnchantmentGlintOverride() {
+        throw NotImplementedException.createByLazy(ItemMeta.class, "hasEnchantmentGlintOverride");
+    }
+
+    @Override
+    public @NotNull Boolean getEnchantmentGlintOverride() {
+        throw NotImplementedException.createByLazy(ItemMeta.class, "getEnchantmentGlintOverride");
+    }
+
+    @Override
+    public void setEnchantmentGlintOverride(@Nullable Boolean aBoolean) {
+        throw NotImplementedException.createByLazy(ItemMeta.class, "setEnchantmentGlintOverride", Boolean.class);
+    }
+
+    @Override
+    public boolean isFireResistant() {
+        return this.container.get(Keys.FIRE_RESISTANT).orElse(false);
+    }
+
+    @Override
+    public void setFireResistant(boolean b) {
+        set(Keys.FIRE_RESISTANT, b);
+    }
+
+    @Override
+    public boolean hasMaxStackSize() {
+        return this.container.get(Keys.MAX_STACK_SIZE).isPresent();
+    }
+
+    @Override
+    public int getMaxStackSize() {
+        return this.container.getInt(Keys.MAX_STACK_SIZE).orElseThrow(() -> new RuntimeException("Item '" + this.container.type().key(RegistryTypes.ITEM_TYPE).asString() + "' does not have a max stack size?"));
+    }
+
+    @Override
+    public void setMaxStackSize(@Nullable Integer integer) {
+        set(Keys.MAX_STACK_SIZE, integer);
+    }
+
+    @Override
+    public boolean hasRarity() {
+        throw NotImplementedException.createByLazy(ItemMeta.class, "hasRarity");
+    }
+
+    @Override
+    public @NotNull ItemRarity getRarity() {
+        throw NotImplementedException.createByLazy(ItemMeta.class, "getRarity");
+    }
+
+    @Override
+    public void setRarity(@Nullable ItemRarity itemRarity) {
+        throw NotImplementedException.createByLazy(ItemMeta.class, "setRarity", ItemRarity.class);
+    }
+
+    @Override
+    public boolean hasFood() {
+        throw NotImplementedException.createByLazy(ItemMeta.class, "hasFood");
+    }
+
+    @Override
+    public @NotNull FoodComponent getFood() {
+        throw NotImplementedException.createByLazy(ItemMeta.class, "getFood");
+    }
+
+    @Override
+    public void setFood(@Nullable FoodComponent foodComponent) {
+        throw NotImplementedException.createByLazy(ItemMeta.class, "setFood", FoodComponent.class);
+    }
+
+    @Override
+    public boolean hasTool() {
+        throw NotImplementedException.createByLazy(ItemMeta.class, "hasTool");
+    }
+
+    @Override
+    public @NotNull ToolComponent getTool() {
+        throw NotImplementedException.createByLazy(ItemMeta.class, "getTool", ToolComponent.class);
+    }
+
+    @Override
+    public void setTool(@Nullable ToolComponent toolComponent) {
+        throw NotImplementedException.createByLazy(ItemMeta.class, "setTool", ToolComponent.class);
+    }
+
+    @Override
+    public boolean hasJukeboxPlayable() {
+        throw NotImplementedException.createByLazy(ItemMeta.class, "hasJukeboxPlayable");
+    }
+
+    @Override
+    public @NotNull JukeboxPlayableComponent getJukeboxPlayable() {
+        throw NotImplementedException.createByLazy(ItemMeta.class, "getJukeboxPlayable");
+    }
+
+    @Override
+    public void setJukeboxPlayable(@Nullable JukeboxPlayableComponent jukeboxPlayableComponent) {
+        throw NotImplementedException.createByLazy(ItemMeta.class, "setJukeboxPlayable", JukeboxPlayableComponent.class);
+    }
+
+    @Override
+    public @NotNull String getAsComponentString() {
+        throw NotImplementedException.createByLazy(ItemMeta.class, "getAsComponentString");
     }
 }
