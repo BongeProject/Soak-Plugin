@@ -89,7 +89,7 @@ public class SoakWrapperListener {
 
     @Listener(order = Order.FIRST)
     public void startingPlugin(StartingEngineEvent<Server> event) {
-        SoakRegister.startEnchantmentTypes(pluginMain.getLogger());
+        //SoakRegister.startEnchantmentTypes(pluginMain.getLogger());
         SoakRegister.startPotionEffects(pluginMain.getLogger());
         PortalCooldownCustomData.createTickScheduler();
     }

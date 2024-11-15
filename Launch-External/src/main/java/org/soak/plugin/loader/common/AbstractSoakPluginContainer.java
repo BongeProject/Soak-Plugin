@@ -10,6 +10,7 @@ import org.spongepowered.plugin.metadata.PluginMetadata;
 
 import java.io.File;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Optional;
 
 public class AbstractSoakPluginContainer implements SoakPluginContainer {
@@ -61,6 +62,23 @@ public class AbstractSoakPluginContainer implements SoakPluginContainer {
     }
 
     @Override
+    public Optional<URI> locateResource(String path) {
+        boolean exists = this.plugin.getResource(path) != null;
+        if (!exists) {
+            return Optional.empty();
+        }
+
+        URI localPath = this.bukkitPluginFile.toURI();
+        URI ret = null;
+        try {
+            ret = localPath.relativize(new URI(path));
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+        return Optional.of(ret);
+    }
+
+    /*@Override
     public Optional<URI> locateResource(URI relative) {
         boolean exists = this.plugin.getResource(relative.getPath()) != null;
         if (!exists) {
@@ -70,5 +88,5 @@ public class AbstractSoakPluginContainer implements SoakPluginContainer {
         URI localPath = this.bukkitPluginFile.toURI();
         URI ret = localPath.relativize(relative);
         return Optional.of(ret);
-    }
+    }*/
 }

@@ -14,8 +14,6 @@ import org.soak.config.SoakConfiguration;
 import org.soak.data.sponge.PortalCooldownCustomData;
 import org.soak.data.sponge.SoakKeys;
 import org.soak.fix.forge.ForgeFixCommons;
-import org.soak.hook.command.DynamicCommandListener;
-import org.soak.hook.command.SpongeDynamicCommand;
 import org.soak.hook.event.HelpMapListener;
 import org.soak.io.SoakServerProperties;
 import org.soak.plugin.external.SoakConfig;
@@ -135,11 +133,6 @@ public class SoakPlugin implements SoakExternalManager, WrapperManager {
     }
 
     @Listener
-    public void registerFakeCommandLauncher(RegisterCommandEvent<Command.Raw> event) {
-        event.register(this.container, new SpongeDynamicCommand(), "soakdynamic");
-    }
-
-    @Listener
     public void dataRegister(RegisterDataEvent event) {
         DataStore dataStore = DataStore.of(SoakKeys.BUKKIT_DATA,
                 DataQuery.of("soak"),
@@ -157,7 +150,7 @@ public class SoakPlugin implements SoakExternalManager, WrapperManager {
 
     @Listener(order = Order.FIRST)
     public void startingPlugin(StartingEngineEvent<Server> event) {
-        SoakRegister.startEnchantmentTypes(this.logger);
+        //SoakRegister.startEnchantmentTypes(this.logger);
         SoakRegister.startPotionEffects(this.logger);
         PortalCooldownCustomData.createTickScheduler();
     }
@@ -254,7 +247,6 @@ public class SoakPlugin implements SoakExternalManager, WrapperManager {
         }
         this.getPlugins().forEach(container -> ((AbstractSoakPluginContainer) container).instance().onPluginsConstructed());
         Sponge.eventManager().registerListeners(this.container, new HelpMapListener());
-        Sponge.eventManager().registerListeners(this.container, new DynamicCommandListener());
     }
 
     public Stream<SoakPluginContainer> getPlugins() {

@@ -49,7 +49,7 @@ public class SoakModContainer extends ModContainer implements SoakPluginContaine
     }
 
     @Override
-    public Optional<URI> locateResource(URI relative) {
+    public Optional<URI> locateResource(String relative) {
         return this.container.locateResource(relative);
     }
 

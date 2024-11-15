@@ -43,7 +43,7 @@ public class InternalSoakPluginContainer implements SoakPluginContainer {
     }
 
     @Override
-    public Optional<URI> locateResource(URI relative) {
+    public Optional<URI> locateResource(String relative) {
         return getTrueContainer().locateResource(relative);
     }
 }

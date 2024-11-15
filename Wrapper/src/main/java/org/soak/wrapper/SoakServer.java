@@ -3,9 +3,15 @@ package org.soak.wrapper;
 import com.destroystokyo.paper.MaterialSetTag;
 import com.destroystokyo.paper.entity.ai.MobGoals;
 import com.destroystokyo.paper.profile.PlayerProfile;
+import io.papermc.paper.ban.BanListType;
 import io.papermc.paper.datapack.DatapackManager;
+import io.papermc.paper.math.Position;
 import io.papermc.paper.tag.EntitySetTag;
+import io.papermc.paper.threadedregions.scheduler.AsyncScheduler;
+import io.papermc.paper.threadedregions.scheduler.GlobalRegionScheduler;
+import io.papermc.paper.threadedregions.scheduler.RegionScheduler;
 import net.kyori.adventure.audience.Audience;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -17,17 +23,16 @@ import org.bukkit.command.CommandException;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.command.PluginCommand;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Player;
-import org.bukkit.entity.SpawnCategory;
+import org.bukkit.entity.*;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.generator.structure.Structure;
 import org.bukkit.inventory.*;
 import org.bukkit.loot.LootTable;
+import org.bukkit.map.MapCursor;
 import org.bukkit.map.MapView;
 import org.bukkit.packs.DataPackManager;
+import org.bukkit.packs.ResourcePack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.ServicesManager;
 import org.bukkit.plugin.SimplePluginManager;
@@ -101,6 +106,11 @@ import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
+/*
+    This class is a bloated mess.
+    Maybe worth splitting this out into their own managers and then using this
+    class to redirect the call to its respected manager.
+ */
 public abstract class SoakServer implements SimpServer {
 
     private final Supplier<org.spongepowered.api.Server> serverSupplier;
@@ -156,8 +166,148 @@ public abstract class SoakServer implements SimpServer {
         this.serverSupplier = serverSupplier;
     }
 
+    @Override
+    public boolean isAcceptingTransfers() {
+        throw NotImplementedException.createByLazy(Server.class, "isAcceptingTransfers");
+    }
+
+    @Override
+    public boolean isOwnedByCurrentRegion(@NotNull World world, @NotNull Position position) {
+        return isOwnedByCurrentRegion(position.toLocation(world));
+    }
+
+    @Override
+    public boolean isOwnedByCurrentRegion(@NotNull World world, @NotNull Position position, int squareRadiusChecks) {
+        return isOwnedByCurrentRegion(position.toLocation(world), squareRadiusChecks);
+    }
+
+    @Override
+    public boolean isOwnedByCurrentRegion(@NotNull Location location) {
+        return isOwnedByCurrentRegion(location, 1);
+    }
+
+    @Override
+    public boolean isOwnedByCurrentRegion(@NotNull Location location, int squareRadiusChunks) {
+        var chunk = location.getChunk();
+        return isOwnedByCurrentRegion(location.getWorld(), chunk.getX(), chunk.getZ(), squareRadiusChunks);
+    }
+
+    @Override
+    public boolean isOwnedByCurrentRegion(@NotNull World world, int chunkX, int chunkZ) {
+        return isOwnedByCurrentRegion(world, chunkX, chunkZ, 1);
+    }
+
+    @Override
+    public boolean isOwnedByCurrentRegion(@NotNull World world, int chunkX, int chunkZ, int squareRadiusChunks) {
+        throw NotImplementedException.createByLazy(Server.class, "isOwnedByCurrentRegion", World.class, int.class, int.class, int.class);
+    }
+
+    @Override
+    public boolean isOwnedByCurrentRegion(@NotNull Entity entity) {
+        return isOwnedByCurrentRegion(entity.getLocation());
+    }
+
+    @Override
+    public @NotNull RegionScheduler getRegionScheduler() {
+        throw NotImplementedException.createByLazy(Server.class, "getRegionScheduler");
+    }
+
+    @Override
+    public @NotNull AsyncScheduler getAsyncScheduler() {
+        throw NotImplementedException.createByLazy(Server.class, "getAsyncScheduler");
+    }
+
+    @Override
+    public @NotNull GlobalRegionScheduler getGlobalRegionScheduler() {
+        throw NotImplementedException.createByLazy(Server.class, "getGlobalRegionScheduler");
+    }
+
+    @Override
+    public void banIP(@NotNull InetAddress inetAddress) {
+        throw NotImplementedException.createByLazy(Server.class, "banIP", InetAddress.class);
+    }
+
+    @Override
+    public void unbanIP(@NotNull InetAddress inetAddress) {
+        throw NotImplementedException.createByLazy(Server.class, "unbanIP", InetAddress.class);
+    }
+
+    @Override
+    public <B extends BanList<E>, E> @NotNull B getBanList(@NotNull BanListType<B> banListType) {
+        throw NotImplementedException.createByLazy(Server.class, "getBanList", BanListType.class);
+    }
+
+    @Override
+    public @NotNull EntityFactory getEntityFactory() {
+        throw NotImplementedException.createByLazy(Server.class, "getEntityFactory");
+    }
+
+    @Override
+    public @NotNull ServerLinks getServerLinks() {
+        throw NotImplementedException.createByLazy(Server.class, "getServerLinks");
+    }
+
+    @Override
+    public @NotNull ItemStack craftItem(@NotNull ItemStack[] itemStacks, @NotNull World world) {
+        throw NotImplementedException.createByLazy(Server.class, "craftItem", ItemStack[].class, World.class);
+    }
+
+    @Override
+    public @NotNull ItemCraftResult craftItemResult(@NotNull ItemStack[] itemStacks, @NotNull World world, @NotNull Player player) {
+        throw NotImplementedException.createByLazy(Server.class, "craftItemResult", ItemStack[].class, World.class, Player.class);
+    }
+
+    @Override
+    public @NotNull ItemCraftResult craftItemResult(@NotNull ItemStack[] itemStacks, @NotNull World world) {
+        throw NotImplementedException.createByLazy(Server.class, "craftItemResult", ItemStack[].class, World.class);
+    }
+
+    @Override
+    public void updateResources() {
+        throw NotImplementedException.createByLazy(Server.class, "updateResources");
+    }
+
+    @Override
+    public void updateRecipes() {
+        throw NotImplementedException.createByLazy(Server.class, "updateRecipes");
+    }
+
+    @Override
+    public boolean removeRecipe(@NotNull NamespacedKey namespacedKey, boolean b) {
+        throw NotImplementedException.createByLazy(Server.class, NamespacedKey.class, boolean.class);
+    }
+
+    @Override
+    public @Nullable ItemStack createExplorerMap(@NotNull World world, @NotNull Location location, @NotNull org.bukkit.generator.structure.StructureType structureType, @NotNull MapCursor.Type type, int i, boolean b) {
+        throw NotImplementedException.createByLazy(Server.class, "createExplorerMap", World.class, Location.class, org.bukkit.generator.structure.StructureType.class, MapCursor.Type.class, int.class, boolean.class);
+    }
+
     public org.spongepowered.api.Server spongeServer() {
         return this.serverSupplier.get();
+    }
+
+    @Override
+    public @Nullable World getWorld(@NotNull Key key) {
+        var namespace = NamespacedKey.fromString(key.asString());
+        if (namespace == null) {
+            return null;
+        }
+        return this.getWorld(namespace);
+    }
+
+    @Override
+    public @Nullable ResourcePack getServerResourcePack() {
+        throw NotImplementedException.createByLazy(Server.class, "getServerResourcePack");
+    }
+
+    @Override
+    public boolean isLoggingIPs() {
+        throw NotImplementedException.createByLazy(Server.class, "isLoggingIPs");
+    }
+
+    @Override
+    public @NotNull ServerTickManager getServerTickManager() {
+        throw NotImplementedException.createByLazy(Server.class, "getServerTickManager");
     }
 
     @Override
@@ -666,7 +816,12 @@ public abstract class SoakServer implements SimpServer {
 
     @Override
     public boolean addRecipe(@Nullable Recipe recipe) {
-        throw NotImplementedException.createByLazy(SoakServer.class, "addRecipe", Recipe.class);
+        return addRecipe(recipe, false);
+    }
+
+    @Override
+    public boolean addRecipe(@Nullable Recipe recipe, boolean resendRecipes) {
+        throw NotImplementedException.createByLazy(SoakServer.class, "addRecipe", Recipe.class, boolean.class);
     }
 
     @Override
@@ -1028,6 +1183,16 @@ public abstract class SoakServer implements SimpServer {
     }
 
     @Override
+    public void setMotd(@NotNull String s) {
+        motd(SoakMessageMap.toComponent(s));
+    }
+
+    @Override
+    public void motd(@NotNull Component component) {
+        throw NotImplementedException.createByLazy(Server.class, "motd", Component.class);
+    }
+
+    @Override
     public @NotNull Component motd() {
         return this.spongeServer().motd();
     }
@@ -1197,6 +1362,15 @@ public abstract class SoakServer implements SimpServer {
         }
         var blockState = BlockState.fromString(s);
         return new SoakBlockData(blockState);
+    }
+
+    @Override
+    public @NotNull BlockData createBlockData(@NotNull Material material, @Nullable Consumer<? super BlockData> consumer) {
+        var result = createBlockData(material);
+        if (consumer != null) {
+            consumer.accept(result);
+        }
+        return result;
     }
 
     @Override

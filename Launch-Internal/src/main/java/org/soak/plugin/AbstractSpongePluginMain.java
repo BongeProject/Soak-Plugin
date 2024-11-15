@@ -93,15 +93,12 @@ public class AbstractSpongePluginMain implements SoakInternalManager, WrapperMan
         List<File> copiedFiles = new LinkedList<>();
         for (var path : this.pathToPlugins) {
             try {
-                var internalPath = new URI(path);
-                var inputStream = this.container.openResource(internalPath).orElseThrow(() -> new RuntimeException("Could not find '" + path + "'"));
+                var inputStream = this.container.openResource(path).orElseThrow(() -> new RuntimeException("Could not find '" + path + "'"));
                 var location = new File("temp/soak/" + path);
                 location.deleteOnExit();
                 location.getParentFile().mkdirs();
                 Files.copy(inputStream, location.toPath(), StandardCopyOption.REPLACE_EXISTING);
                 copiedFiles.add(location);
-            } catch (URISyntaxException e) {
-                throw new RuntimeException(e);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
