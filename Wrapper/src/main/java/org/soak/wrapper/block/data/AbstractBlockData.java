@@ -16,6 +16,7 @@ import org.bukkit.util.VoxelShape;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.soak.exception.NotImplementedException;
+import org.soak.map.SoakBlockMap;
 import org.soak.map.SoakMirrorMap;
 import org.soak.map.SoakRotationMap;
 import org.soak.wrapper.block.data.type.BlockDataTypes;
@@ -157,7 +158,7 @@ public abstract class AbstractBlockData implements BlockData, CommonBlockData {
 
     @Override
     public @NotNull Material getMaterial() {
-        return Material.getBlockMaterial(this.spongeState.type());
+        return SoakBlockMap.toBukkit(this.spongeState.type());
     }
 
     @Override

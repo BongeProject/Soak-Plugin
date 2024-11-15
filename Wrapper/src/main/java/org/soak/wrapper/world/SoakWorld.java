@@ -29,16 +29,14 @@ import org.jetbrains.annotations.Nullable;
 import org.mose.collection.stream.builder.CollectionStreamBuilder;
 import org.soak.WrapperManager;
 import org.soak.exception.NotImplementedException;
-import org.soak.map.SoakBoundingBox;
-import org.soak.map.SoakLocationMap;
-import org.soak.map.SoakResourceKeyMap;
-import org.soak.map.SoakWorldTypeMap;
+import org.soak.map.*;
 import org.soak.plugin.SoakManager;
 import org.soak.utils.ListMappingUtils;
 import org.soak.utils.single.SoakSingleInstance;
 import org.soak.wrapper.SoakWorldBorder;
 import org.soak.wrapper.block.SoakBlock;
 import org.soak.wrapper.entity.AbstractEntity;
+import org.soak.wrapper.entity.SoakEntity;
 import org.soak.wrapper.entity.SoakLightningStrike;
 import org.soak.wrapper.entity.living.human.SoakPlayer;
 import org.soak.wrapper.world.chunk.AbstractSoakChunk;
@@ -425,7 +423,7 @@ public class SoakWorld implements World, SoakSingleInstance<org.spongepowered.ap
                 .findAny()
                 .orElseThrow(() -> new RuntimeException("EntityType could not be found for class " + aClass.getName()));
         var spongeEntity = this.sponge()
-                .createEntity(bukkitType.asSponge(), new Vector3d(location.getX(), location.getY(), location.getZ()));
+                .createEntity(SoakEntityMap.toSponge(bukkitType), new Vector3d(location.getX(), location.getY(), location.getZ()));
         var bukkitEntity = (T) AbstractEntity.wrap(spongeEntity);
         consumer.accept(bukkitEntity);
         this.sponge().spawnEntity(spongeEntity);
@@ -837,7 +835,7 @@ public class SoakWorld implements World, SoakSingleInstance<org.spongepowered.ap
 
     @Override
     public @NotNull Entity spawnEntity(@NotNull Location arg0, @NotNull EntityType arg1) {
-        var type = arg1.asSponge();
+        var type = SoakEntityMap.toSponge(arg1);
         var entity = this.world.createEntity(type, new Vector3d(arg0.getX(), arg0.getY(), arg0.getZ()));
         this.world.spawnEntity(entity);
         return AbstractEntity.wrap(entity);

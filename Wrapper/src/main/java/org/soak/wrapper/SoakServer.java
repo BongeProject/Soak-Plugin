@@ -49,9 +49,8 @@ import org.jetbrains.annotations.Nullable;
 import org.mose.collection.stream.builder.CollectionStreamBuilder;
 import org.soak.WrapperManager;
 import org.soak.exception.NotImplementedException;
-import org.soak.map.SoakGameModeMap;
-import org.soak.map.SoakMessageMap;
-import org.soak.map.SoakResourceKeyMap;
+import org.soak.map.*;
+import org.soak.map.item.SoakItemStackMap;
 import org.soak.map.item.SoakRecipeMap;
 import org.soak.plugin.SoakExternalManager;
 import org.soak.plugin.SoakManager;
@@ -111,7 +110,7 @@ import java.util.stream.Collectors;
     Maybe worth splitting this out into their own managers and then using this
     class to redirect the call to its respected manager.
  */
-public abstract class SoakServer implements SimpServer {
+public abstract class SoakServer implements Server {
 
     private final Supplier<org.spongepowered.api.Server> serverSupplier;
     private final Singleton<SoakMessenger> messenger = new Singleton<>(() -> new SoakMessenger(Sponge.channelManager()));
@@ -325,7 +324,7 @@ public abstract class SoakServer implements SimpServer {
                     .filter(spongeTag -> spongeTag.key().equals(key))
                     .findAny();
             if (opTag.isPresent()) {
-                return (Tag<T>) (Object) new MaterialSetTag(tag, TagHelper.getBlockTypes(opTag.get()).map(Material::getBlockMaterial).collect(Collectors.toList()));
+                return (Tag<T>) (Object) new MaterialSetTag(tag, TagHelper.getBlockTypes(opTag.get()).map(block -> SoakBlockMap.toBukkit(block)).collect(Collectors.toList()));
             }
         }
         if (classMatch && registry.equals(Tag.REGISTRY_ITEMS)) {
@@ -334,7 +333,7 @@ public abstract class SoakServer implements SimpServer {
                     .filter(spongeTag -> spongeTag.key().equals(key))
                     .findAny();
             if (opTag.isPresent()) {
-                return (Tag<T>) (Object) new MaterialSetTag(tag, TagHelper.getItemTypes(opTag.get()).map(Material::getItemMaterial).collect(Collectors.toList()));
+                return (Tag<T>) (Object) new MaterialSetTag(tag, TagHelper.getItemTypes(opTag.get()).map(item -> SoakItemStackMap.toBukkit(item)).collect(Collectors.toList()));
             }
         }
         if (clazz.getName().equals(EntityType.class.getName()) && registry.equals(Tag.REGISTRY_ENTITY_TYPES)) {
@@ -343,7 +342,7 @@ public abstract class SoakServer implements SimpServer {
                     .filter(spongeTag -> spongeTag.key().equals(key))
                     .findAny();
             if (opTag.isPresent()) {
-                return (Tag<T>) (Object) new EntitySetTag(tag, TagHelper.getEntityTypes(opTag.get()).map(EntityType::fromSponge).collect(Collectors.toList()));
+                return (Tag<T>) (Object) new EntitySetTag(tag, TagHelper.getEntityTypes(opTag.get()).map(entity -> SoakEntityMap.toBukkit(entity)).collect(Collectors.toList()));
             }
         }
 
@@ -354,18 +353,18 @@ public abstract class SoakServer implements SimpServer {
                     ItemTypes.registry()
                             .stream()
                             .filter(item -> item.key(RegistryTypes.ITEM_TYPE).value().contains("coral_blocks"))
-                            .map(item -> Material.getItemMaterial(item))
+                            .map(item -> SoakItemStackMap.toBukkit(item))
                             .collect(Collectors.toList()));
         }
 
         if (registry.equals(Tag.REGISTRY_BLOCKS) && tag.asString()
                 .equals("minecraft:wool_carpets")) {
-            Set<Material> itemTypes = TagHelper.getBlockTypes(BlockTypeTags.WOOL_CARPETS).map(Material::getBlockMaterial).collect(Collectors.toSet());
+            Set<Material> itemTypes = TagHelper.getBlockTypes(BlockTypeTags.WOOL_CARPETS).map(block -> SoakBlockMap.toBukkit(block)).collect(Collectors.toSet());
             return (Tag<T>) (Object) new MaterialSetTag(tag, itemTypes);
         }
 
         if (registry.equals(Tag.REGISTRY_ITEMS) && tag.asString().equals("minecraft:wool_carpets")) {
-            Set<Material> itemTypes = TagHelper.getItemTypes(ItemTypeTags.WOOL_CARPETS).map(Material::getItemMaterial).collect(Collectors.toSet());
+            Set<Material> itemTypes = TagHelper.getItemTypes(ItemTypeTags.WOOL_CARPETS).map(item -> SoakItemStackMap.toBukkit(item)).collect(Collectors.toSet());
             return (Tag<T>) (Object) new MaterialSetTag(tag, itemTypes);
 
         }
@@ -384,7 +383,7 @@ public abstract class SoakServer implements SimpServer {
                     .filter(item -> org.spongepowered.api.item.inventory.ItemStack.of(item)
                             .get(Keys.REPLENISHED_FOOD)
                             .isPresent())
-                    .map(Material::getItemMaterial)
+                    .map(item -> SoakItemStackMap.toBukkit(item))
                     .collect(Collectors.toSet());
             return (Tag<T>) (Object) new MaterialSetTag(tag, items);
         }
@@ -394,7 +393,7 @@ public abstract class SoakServer implements SimpServer {
                     .filter(item -> org.spongepowered.api.item.inventory.ItemStack.of(item)
                             .get(Keys.MAX_COOK_TIME)
                             .isPresent())
-                    .map(Material::getItemMaterial)
+                    .map(item -> SoakItemStackMap.toBukkit(item))
                     .collect(Collectors.toSet());
             return (Tag<T>) (Object) new MaterialSetTag(tag, items);
         }
@@ -409,7 +408,7 @@ public abstract class SoakServer implements SimpServer {
     }
 
     @Override
-    public @NotNull Spigot spigot() {
+    public @NotNull Server.Spigot spigot() {
         throw NotImplementedException.createByLazy(Server.class, "spigot");
     }
 
@@ -420,7 +419,7 @@ public abstract class SoakServer implements SimpServer {
 
     @Override
     public @NotNull File getPluginsFolder() {
-        return new File("bukkit/plugins");
+        return new File("org/soak/generate/bukkit/plugins");
     }
 
     @Override
@@ -674,6 +673,17 @@ public abstract class SoakServer implements SimpServer {
             return null;
         }
         return player.getUniqueId();
+    }
+
+    @Override
+    public @Nullable Player getPlayer(@NotNull UUID uuid) {
+        return Sponge.server().player(uuid).map(player -> SoakManager.<WrapperManager>getManager().getMemoryStore().get(player)).orElse(null);
+    }
+
+    @Override
+    public @Nullable Player getPlayer(@NotNull String s) {
+        return Sponge.server().player(s).map(player -> SoakManager.<WrapperManager>getManager().getMemoryStore().get(player)).orElse(null);
+
     }
 
     public @NotNull SoakPluginManager getSoakPluginManager() {
@@ -1358,7 +1368,7 @@ public abstract class SoakServer implements SimpServer {
             return createBlockData(material);
         }
         if (s.startsWith("[")) {
-            s = material.asBlock().orElseThrow(() -> new IllegalStateException("Item cannot be converted to BlockState")).key(RegistryTypes.BLOCK_TYPE).formatted() + s;
+            s = SoakBlockMap.toSponge(material).orElseThrow(() -> new IllegalStateException("Item cannot be converted to BlockState")).key(RegistryTypes.BLOCK_TYPE).formatted() + s;
         }
         var blockState = BlockState.fromString(s);
         return new SoakBlockData(blockState);

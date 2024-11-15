@@ -15,6 +15,7 @@ import org.soak.WrapperManager;
 import org.soak.exception.NotImplementedException;
 import org.soak.map.SoakLocationMap;
 import org.soak.map.item.SoakItemStackMap;
+import org.soak.map.item.inventory.SoakInventoryMap;
 import org.soak.plugin.SoakManager;
 import org.soak.utils.ListMappingUtils;
 import org.soak.utils.ReflectionHelper;
@@ -76,7 +77,7 @@ public class SoakInventory<Inv extends org.spongepowered.api.item.inventory.Inve
     //why ..... why is it a hashmap rather than a normal interface map .... i cant mock that
     @Override
     public @NotNull HashMap<Integer, ? extends ItemStack> all(@NotNull Material material) throws IllegalArgumentException {
-        var map = slotsMatching(spongeSlot -> material.asItem().map(itemType -> itemType.equals(spongeSlot.peek().type())).orElse(false));
+        var map = slotsMatching(spongeSlot -> SoakItemStackMap.toSponge(material).map(itemType -> itemType.equals(spongeSlot.peek().type())).orElse(false));
         return new HashMap<>(map);
     }
 
@@ -97,7 +98,7 @@ public class SoakInventory<Inv extends org.spongepowered.api.item.inventory.Inve
     }
 
     private org.spongepowered.api.item.inventory.Inventory asJustType(Material material) {
-        var itemType = material.asItem()
+        var itemType = SoakItemStackMap.toSponge(material)
                 .orElseThrow(() -> new RuntimeException("Material " + material.name() + " has no itemtype"));
         return this.spongeInventory.query(QueryTypes.ITEM_TYPE.get().of(itemType));
     }
@@ -234,7 +235,7 @@ public class SoakInventory<Inv extends org.spongepowered.api.item.inventory.Inve
         if (!(spongeInventory instanceof Container)) {
             throw new RuntimeException("Sponge inventory is not a Container, unknown inventory type");
         }
-        return InventoryType.container((Container) this.spongeInventory);
+        return SoakInventoryMap.toBukkit((Container) this.spongeInventory);
     }
 
     @Override

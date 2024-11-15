@@ -34,10 +34,8 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scoreboard.Scoreboard;
 import org.jetbrains.annotations.*;
 import org.soak.exception.NotImplementedException;
-import org.soak.map.SoakLocationMap;
-import org.soak.map.SoakMessageMap;
-import org.soak.map.SoakResourceKeyMap;
-import org.soak.map.SoakSoundMap;
+import org.soak.map.*;
+import org.soak.map.item.SoakItemStackMap;
 import org.soak.plugin.SoakManager;
 import org.soak.utils.single.SoakSingleInstance;
 import org.soak.wrapper.inventory.SoakInventory;
@@ -359,10 +357,10 @@ public class SoakPlayer extends AbstractHumanBase<ServerPlayer> implements Playe
                 .filter(entry -> entry.getKey() instanceof org.spongepowered.api.statistic.Statistic.TypeInstance<?>)
                 .filter(entry -> {
                     var typedStatistic = ((org.spongepowered.api.statistic.Statistic.TypeInstance<?>) entry.getKey()).type();
-                    if (material.asBlock().map(typedStatistic::equals).orElse(false)) {
+                    if (SoakBlockMap.toSponge(material).map(typedStatistic::equals).orElse(false)) {
                         return true;
                     }
-                    return material.asItem().map(typedStatistic::equals).orElse(false);
+                    return SoakItemStackMap.toSponge(material).map(typedStatistic::equals).orElse(false);
                 })
                 .findAny();
     }
@@ -394,7 +392,7 @@ public class SoakPlayer extends AbstractHumanBase<ServerPlayer> implements Playe
 
     public Optional<Map.Entry<org.spongepowered.api.statistic.Statistic, Long>> statistic(Statistic statistic, EntityType type) {
         var spongeStatistics = this.spongeEntity().statistics().get();
-        var spongeEntityType = type.asSponge();
+        var spongeEntityType = SoakEntityMap.toSponge(type);
         var spongeKey = SoakResourceKeyMap.mapToSponge(statistic.getKey());
         return spongeStatistics
                 .entrySet()

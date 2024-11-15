@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.mose.collection.stream.builder.CollectionStreamBuilder;
 import org.soak.exception.NotImplementedException;
+import org.soak.map.SoakBlockMap;
 import org.soak.map.SoakMessageMap;
 import org.soak.map.item.SoakEnchantmentTypeMap;
 import org.soak.map.item.SoakItemFlagMap;
@@ -452,15 +453,17 @@ public abstract class AbstractItemMeta implements ItemMeta, Damageable {
     }
 
     @Override
+    @Deprecated
     public Set<Material> getCanDestroy() {
-        return this.container.get(Keys.BREAKABLE_BLOCK_TYPES).orElse(Set.of()).stream().map(Material::getBlockMaterial).collect(Collectors.toSet());
+        return this.container.get(Keys.BREAKABLE_BLOCK_TYPES).orElse(Set.of()).stream().map(SoakBlockMap::toBukkit).collect(Collectors.toSet());
     }
 
     @Override
+    @Deprecated
     public void setCanDestroy(Set<Material> canDestroy) {
         setSet(Keys.BREAKABLE_BLOCK_TYPES, canDestroy
                 .stream()
-                .map(Material::asBlock)
+                .map(SoakBlockMap::toSponge)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.toSet()));
@@ -468,14 +471,14 @@ public abstract class AbstractItemMeta implements ItemMeta, Damageable {
 
     @Override
     public Set<Material> getCanPlaceOn() {
-        return this.container.get(Keys.PLACEABLE_BLOCK_TYPES).orElse(Set.of()).stream().map(Material::getBlockMaterial).collect(Collectors.toSet());
+        return this.container.get(Keys.PLACEABLE_BLOCK_TYPES).orElse(Set.of()).stream().map(SoakBlockMap::toBukkit).collect(Collectors.toSet());
     }
 
     @Override
     public void setCanPlaceOn(Set<Material> canPlaceOn) {
         setSet(Keys.PLACEABLE_BLOCK_TYPES, canPlaceOn
                 .stream()
-                .map(Material::asBlock)
+                .map(SoakBlockMap::toSponge)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.toSet()));

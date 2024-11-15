@@ -19,6 +19,7 @@ import org.bukkit.util.VoxelShape;
 import org.jetbrains.annotations.NotNull;
 import org.soak.WrapperManager;
 import org.soak.exception.NotImplementedException;
+import org.soak.map.SoakBlockMap;
 import org.soak.map.item.SoakItemStackMap;
 import org.soak.plugin.SoakManager;
 import org.soak.wrapper.block.data.CommonBlockData;
@@ -96,7 +97,7 @@ public class SoakBlock extends AbstractBlock<ServerLocation> {
 
     @Override
     public void setType(Material arg0, boolean arg1) {
-        var blockType = arg0.asBlock().orElseThrow(() -> new RuntimeException(arg0.name() + " is not a block"));
+        var blockType = SoakBlockMap.toSponge(arg0).orElseThrow(() -> new RuntimeException(arg0.name() + " is not a block"));
         var blockChangeFlag = arg1 ? BlockChangeFlags.ALL : BlockChangeFlags.NOTIFY_CLIENTS;
         this.block.setBlockType(blockType, blockChangeFlag);
     }

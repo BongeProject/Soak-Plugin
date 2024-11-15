@@ -4,6 +4,7 @@ import org.bukkit.Material;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.soak.generate.bukkit.MaterialList;
 import org.soak.utils.SnapshotHelper;
 import org.soak.wrapper.inventory.meta.*;
 import org.spongepowered.api.data.Keys;
@@ -15,6 +16,8 @@ import org.spongepowered.api.item.inventory.ItemStackLike;
 import org.spongepowered.api.item.inventory.ItemStackSnapshot;
 import org.spongepowered.api.tag.ItemTypeTags;
 
+import java.util.EnumSet;
+import java.util.Optional;
 import java.util.function.Function;
 
 public class SoakItemStackMap {
@@ -37,13 +40,24 @@ public class SoakItemStackMap {
                 AbstractItemMeta::asSnapshot);
     }
 
+    public static Optional<ItemType> toSponge(@NotNull Material material) {
+        return MaterialList.getItemType(material);
+    }
+
+    public static Material toBukkit(@NotNull ItemType type) {
+        return MaterialList.value(type);
+    }
+
+    public static EnumSet<Material> materials() {
+        return MaterialList.values();
+    }
+
     public static ItemStack toSponge(@Nullable org.bukkit.inventory.ItemStack stack) {
         if (stack == null) {
             return ItemStack.empty();
         }
         if (!stack.hasItemMeta()) {
-            return ItemStack.of(stack.getType()
-                    .asItem()
+            return ItemStack.of(toSponge(stack.getType())
                     .orElseThrow(() -> new RuntimeException("Material of " + stack.getType()
                             .name() + " is not an item")), stack.getAmount());
         }
@@ -80,13 +94,11 @@ public class SoakItemStackMap {
     }
 
     private static org.bukkit.inventory.ItemStack toBukkit(@NotNull ItemType type, int amount, @NotNull ItemStackLike container) {
-        org.bukkit.inventory.ItemStack stack = new org.bukkit.inventory.ItemStack(Material.getItemMaterial(type),
-                amount);
+        var stack = new org.bukkit.inventory.ItemStack(toBukkit(type), amount);
         stack.setItemMeta(toBukkitMeta(container));
         return stack;
     }
 
-    @SuppressWarnings("deprecation")
     public static AbstractItemMeta toBukkitMeta(@NotNull ItemStackLike container) {
         ItemType type = container.type();
         if (container.supports(Keys.POTION_EFFECTS)) {

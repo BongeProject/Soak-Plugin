@@ -17,6 +17,20 @@ public class NotImplementedException extends RuntimeException {
         this.interfaceMethod = interfaceMethod;
     }
 
+    public static NotImplementedException createByLazy(Object fromObject, String name, Class<?>... parameters) {
+        Class<?> clazz = fromObject.getClass();
+        while (!clazz.equals(Object.class)) {
+            clazz = clazz.getSuperclass();
+            try {
+                return new NotImplementedException(clazz.getDeclaredMethod(name, parameters));
+            } catch (NoSuchMethodException e) {
+                continue;
+            }
+        }
+        //fail safe
+        throw new RuntimeException("The method is not implemented " + fromObject.getClass().getName() + "." + name + "(" + Arrays.stream(parameters).map(parameter -> parameter.getSimpleName() + " arg").collect(Collectors.joining(", ")) + ")");
+    }
+
     public static NotImplementedException createByLazy(Class<?> from, String name, Class<?>... parameters) {
         try {
             throw new NotImplementedException(from, name, parameters);

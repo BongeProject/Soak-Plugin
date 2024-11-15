@@ -12,6 +12,7 @@ import org.bukkit.inventory.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.soak.exception.NotImplementedException;
+import org.soak.map.SoakGameModeMap;
 import org.soak.wrapper.entity.living.AbstractLivingEntity;
 import org.spongepowered.api.data.Keys;
 import org.spongepowered.api.entity.living.Humanoid;
@@ -239,12 +240,12 @@ public abstract class AbstractHumanBase<E extends Humanoid> extends AbstractLivi
                 .get(Keys.GAME_MODE)
                 .orElseThrow(() -> new RuntimeException("Cannot get Gamemode from " + spongeEntity().getClass()
                         .getName()));
-        return GameMode.sponge(spongeMode);
+        return SoakGameModeMap.toBukkit(spongeMode);
     }
 
     @Override
     public void setGameMode(@NotNull GameMode arg0) {
-        this.spongeEntity().offer(Keys.GAME_MODE, arg0.sponge());
+        this.spongeEntity().offer(Keys.GAME_MODE, SoakGameModeMap.toSponge(arg0));
     }
 
     @Override

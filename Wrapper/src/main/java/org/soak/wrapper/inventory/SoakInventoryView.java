@@ -14,6 +14,7 @@ import org.soak.WrapperManager;
 import org.soak.exception.NotImplementedException;
 import org.soak.map.SoakMessageMap;
 import org.soak.map.item.SoakItemStackMap;
+import org.soak.map.item.inventory.SoakInventoryMap;
 import org.soak.plugin.SoakManager;
 import org.soak.utils.ReflectionHelper;
 import org.spongepowered.api.item.inventory.Container;
@@ -50,7 +51,7 @@ public class SoakInventoryView implements InventoryView {
 
     @Override
     public @NotNull InventoryType getType() {
-        return InventoryType.container(this.spongeContainer);
+        return SoakInventoryMap.toBukkit(this.spongeContainer);
     }
 
     @Override
@@ -115,7 +116,7 @@ public class SoakInventoryView implements InventoryView {
     @Override
     public InventoryType.SlotType getSlotType(int i) {
         //TODO check this
-        return InventoryType.SlotType.typeFor(spongeContainer.slot(i).orElseThrow(() -> new IndexOutOfBoundsException("'" + i + "' is out of bounds")));
+        return SoakInventoryMap.toBukkit(spongeContainer.slot(i).orElseThrow(() -> new IndexOutOfBoundsException("'" + i + "' is out of bounds")));
     }
 
     @Override

@@ -21,7 +21,6 @@ dependencies {
     implementation project(":Launch-Common")
     implementation project(":Common")
     implementation project(":Wrapper")
-    implementation project(":bukkit-api")
 
     implementation 'org.spongepowered:spongeapi:' + property("SPONGE_VERSION")
 

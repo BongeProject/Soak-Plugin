@@ -23,6 +23,7 @@ import org.soak.WrapperManager;
 import org.soak.data.sponge.SoakKeys;
 import org.soak.exception.NotImplementedException;
 import org.soak.map.SoakDirectionMap;
+import org.soak.map.SoakEntityMap;
 import org.soak.map.SoakMessageMap;
 import org.soak.map.SoakVectorMap;
 import org.soak.plugin.SoakManager;
@@ -170,7 +171,7 @@ public abstract class AbstractEntity<E extends org.spongepowered.api.entity.Enti
 
     @Override
     public @NotNull EntityType getType() {
-        return EntityType.fromSponge(this.entity.type());
+        return SoakEntityMap.toBukkit(this.entity.type());
     }
 
     @Override

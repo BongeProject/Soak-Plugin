@@ -26,7 +26,7 @@ public class SoakRecipeMap {
         List<Ingredient> inputs = recipe.ingredients();
 
         if (recipe instanceof CookingRecipe cooking) {
-            var input = Material.getItemMaterial(cooking.ingredient().displayedItems().get(0).type());
+            var input = SoakItemStackMap.toBukkit(cooking.ingredient().displayedItems().getFirst().type());
             if (cooking.type().equals(RecipeTypes.SMELTING.get())) {
                 return new FurnaceRecipe(key,
                         result,
@@ -57,7 +57,7 @@ public class SoakRecipeMap {
             }
         }
         if (recipe instanceof StoneCutterRecipe stoneCutterRecipe) {
-            var input = Material.getItemMaterial(stoneCutterRecipe.ingredients().get(0).displayedItems().get(0).type());
+            var input = SoakItemStackMap.toBukkit(stoneCutterRecipe.ingredients().getFirst().displayedItems().getFirst().type());
             return new StonecuttingRecipe(key, result, input);
         }
 
@@ -66,8 +66,7 @@ public class SoakRecipeMap {
         }
 
 
-        if (recipe instanceof ShapedCraftingRecipe) {
-            var shapedCrafting = (ShapedCraftingRecipe) recipe;
+        if (recipe instanceof ShapedCraftingRecipe shapedCrafting) {
             var shaped = new ShapedRecipe(key, result);
             int i = 0;
             Map<Integer, String> characterMap = new LinkedHashMap<>();
@@ -83,7 +82,7 @@ public class SoakRecipeMap {
                     if (items.isEmpty()) {
                         continue;
                     }
-                    ingredients.put(c, SoakItemStackMap.toBukkit(items.get(0)));
+                    ingredients.put(c, SoakItemStackMap.toBukkit(items.getFirst()));
                 }
             }
             shaped.shape(characterMap.values().toArray(new String[0]));
@@ -96,7 +95,7 @@ public class SoakRecipeMap {
             inputs.stream()
                     .map(Ingredient::displayedItems)
                     .filter(in -> !in.isEmpty())
-                    .map(in -> in.get(0))
+                    .map(List::getFirst)
                     .map(SoakItemStackMap::toBukkit)
                     .forEach(shapeless::addIngredient);
             return shapeless;

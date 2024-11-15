@@ -70,7 +70,7 @@ public class SoakItemFactory implements ItemFactory {
 
     @Override
     public ItemMeta getItemMeta(@NotNull Material arg0) {
-        ItemType type = arg0.asItem()
+        ItemType type = SoakItemStackMap.toSponge(arg0)
                 .orElseThrow(() -> new IllegalStateException("Material of " + arg0.name() + " is not a item"));
         return SoakItemStackMap.toBukkitMeta(org.spongepowered.api.item.inventory.ItemStack.of(type));
     }
@@ -93,7 +93,7 @@ public class SoakItemFactory implements ItemFactory {
     @Override
     public ItemMeta asMetaFor(@NotNull ItemMeta arg0, @NotNull ItemStack arg1) {
         ItemMeta stacksMeta = arg1.hasItemMeta() ? arg1.getItemMeta() : SoakItemStackMap.toBukkitMeta(org.spongepowered.api.item.inventory.ItemStack.of(
-                arg1.getType().asItem().orElseThrow(() -> new RuntimeException("Material is not item in itemstack")),
+                SoakItemStackMap.toSponge(arg1.getType()).orElseThrow(() -> new RuntimeException("Material is not item in itemstack")),
                 arg1.getAmount()));
         if (!(stacksMeta instanceof AbstractItemMeta)) {
             throw new RuntimeException("An item meta was not of abstract type: From: " + stacksMeta.getClass()

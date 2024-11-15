@@ -17,6 +17,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 import org.soak.WrapperManager;
 import org.soak.exception.NotImplementedException;
+import org.soak.map.SoakBlockMap;
 import org.soak.map.SoakLocationMap;
 import org.soak.plugin.SoakManager;
 import org.soak.utils.KeyValuePair;
@@ -114,7 +115,7 @@ public abstract class AbstractBlockState implements BlockState {
 
     @Override
     public @NotNull Material getType() {
-        return Material.getBlockMaterial(this.state.type());
+        return SoakBlockMap.toBukkit(this.state.type());
     }
 
     @Override

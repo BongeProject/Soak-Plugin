@@ -26,6 +26,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
 import org.soak.Constants;
 import org.soak.exception.NotImplementedException;
+import org.soak.map.SoakBlockMap;
 import org.soak.wrapper.block.SoakBlock;
 import org.soak.wrapper.damage.SoakDamageSource;
 import org.soak.wrapper.entity.AbstractEntity;
@@ -263,7 +264,7 @@ public abstract class AbstractLivingEntity<E extends Living> extends AbstractEnt
                         return false;
                     }
                     return transparent.stream()
-                            .map(mat -> mat.asBlock()
+                            .map(mat -> SoakBlockMap.toSponge(mat)
                                     .orElseThrow(() -> new RuntimeException(mat.name() + " is not a block")))
                             .anyMatch(type -> type.equals(locatableBlock.blockState().type()));
                 }))

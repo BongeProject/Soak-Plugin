@@ -14,15 +14,22 @@ java {
 
 repositories {
     mavenCentral()
+    maven {
+        url "https://repo.papermc.io/repository/maven-public"
+    }
 }
 
 dependencies {
-    implementation project(':bukkit-api')
     implementation project(':Common')
     implementation project(':CollectionStream')
     implementation project(':MoseStream')
     implementation 'org.spongepowered:spongeapi:' + property("SPONGE_VERSION")
     implementation 'org.spongepowered:configurate-jackson:4.1.2'
+    implementation 'org.jetbrains:annotations:26.0.1'
+
+
+    implementation 'net.bytebuddy:byte-buddy:1.15.10'
+    implementation 'io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT'
 
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
