@@ -273,16 +273,36 @@ public abstract class SoakServer implements Server {
 
     @Override
     public boolean removeRecipe(@NotNull NamespacedKey namespacedKey, boolean b) {
-        throw NotImplementedException.createByLazy(Server.class, NamespacedKey.class, boolean.class);
+        throw NotImplementedException.createByLazy(Server.class, "removeRecipe", NamespacedKey.class, boolean.class);
     }
 
     @Override
     public @Nullable ItemStack createExplorerMap(@NotNull World world, @NotNull Location location, @NotNull org.bukkit.generator.structure.StructureType structureType, @NotNull MapCursor.Type type, int i, boolean b) {
+        Bukkit bukkit;
         throw NotImplementedException.createByLazy(Server.class, "createExplorerMap", World.class, Location.class, org.bukkit.generator.structure.StructureType.class, MapCursor.Type.class, int.class, boolean.class);
     }
 
     public org.spongepowered.api.Server spongeServer() {
         return this.serverSupplier.get();
+    }
+
+    @Override
+    public @Nullable Recipe getRecipe(@NotNull NamespacedKey namespacedKey) {
+        throw NotImplementedException.createByLazy(Server.class, "getRecipe", NamespacedKey.class);
+    }
+
+    @Override
+    public @NotNull List<Recipe> getRecipesFor(@NotNull ItemStack itemStack) {
+        throw NotImplementedException.createByLazy(Server.class, "getRecipesFor", ItemStack.class);
+    }
+
+    @Override
+    public boolean unloadWorld(@NotNull String name, boolean save) {
+        var world = getWorld(name);
+        if (world == null) {
+            return false;
+        }
+        return unloadWorld(world, save);
     }
 
     @Override
@@ -292,6 +312,38 @@ public abstract class SoakServer implements Server {
             return null;
         }
         return this.getWorld(namespace);
+    }
+
+    @Override
+    public @Nullable World getWorld(@NotNull String s) {
+        return Sponge
+                .server()
+                .worldManager()
+                .worlds()
+                .stream()
+                .filter(world -> world
+                        .key()
+                        .value()
+                        .equalsIgnoreCase(s))
+                .findAny()
+                .map(world -> SoakManager
+                        .<WrapperManager>getManager()
+                        .getMemoryStore()
+                        .get(world))
+                .orElse(null);
+    }
+
+    @Override
+    public @Nullable World getWorld(@NotNull UUID uuid) {
+        var worldManager = Sponge.server().worldManager();
+        return worldManager
+                .worldKey(uuid)
+                .flatMap(worldManager::world)
+                .map(world -> SoakManager
+                        .<WrapperManager>getManager()
+                        .getMemoryStore()
+                        .get(world))
+                .orElse(null);
     }
 
     @Override
@@ -1193,11 +1245,6 @@ public abstract class SoakServer implements Server {
     }
 
     @Override
-    public void setMotd(@NotNull String s) {
-        motd(SoakMessageMap.toComponent(s));
-    }
-
-    @Override
     public void motd(@NotNull Component component) {
         throw NotImplementedException.createByLazy(Server.class, "motd", Component.class);
     }
@@ -1211,6 +1258,11 @@ public abstract class SoakServer implements Server {
     @Override
     public @NotNull String getMotd() {
         return LegacyComponentSerializer.legacySection().serialize(motd());
+    }
+
+    @Override
+    public void setMotd(@NotNull String s) {
+        motd(SoakMessageMap.toComponent(s));
     }
 
     @Override

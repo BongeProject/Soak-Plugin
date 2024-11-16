@@ -14,7 +14,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.CheckReturnValue;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.soak.Compatibility;
 import org.soak.WrapperManager;
 import org.soak.io.SoakServerProperties;
 import org.soak.plugin.paper.loader.SoakPluginClassLoader;
@@ -27,7 +26,9 @@ import org.spongepowered.plugin.PluginContainer;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.net.*;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Collection;
@@ -49,7 +50,6 @@ public class AbstractSpongePluginMain implements SoakInternalManager, WrapperMan
     private final Function<ClassLoader, Class<? extends JavaPlugin>> loaderToMain;
     private final String[] pathToPlugins;
     private final Logger logger;
-    private final Compatibility compatibility;
     private final SoakServerProperties serverProperties = new SoakServerProperties();
     private final ConsoleHandler consoleHandler = new ConsoleHandler();
     private final SoakMemoryStore memoryStore = new SoakMemoryStore();
@@ -72,7 +72,6 @@ public class AbstractSpongePluginMain implements SoakInternalManager, WrapperMan
         this.pathToPlugins = pathsToPlugins;
         this.logger = logger;
         this.container = container;
-        this.compatibility = new Compatibility();
         GlobalSoakData.MANAGER_INSTANCE = this;
         Bukkit.setServer(new NMSBounceSoakServer(Sponge::server));
         Sponge.eventManager().registerListeners(container, new SoakWrapperListener(this));
@@ -236,10 +235,5 @@ public class AbstractSpongePluginMain implements SoakInternalManager, WrapperMan
     @Override
     public ArtifactVersion getVersion() {
         return soakVersion;
-    }
-
-    @Override
-    public Compatibility getCompatibility() {
-        return compatibility;
     }
 }

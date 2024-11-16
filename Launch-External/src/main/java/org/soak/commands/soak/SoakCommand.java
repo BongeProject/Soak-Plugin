@@ -80,14 +80,6 @@ public class SoakCommand {
                     context.sendMessage(id,
                             createInfoMessage("Version",
                                     SoakPlugin.plugin().container().metadata().version().toString()));
-                    context.sendMessage(id,
-                            createInfoMessage("Compatibility", SoakPlugin.plugin().getCompatibility().getName()));
-                    context.sendMessage(id,
-                            createInfoMessage("Compatibility version",
-                                    SoakPlugin.plugin().getCompatibility().getVersion().toString()));
-                    context.sendMessage(id,
-                            createInfoMessage("Target Minecraft version",
-                                    SoakPlugin.plugin().getCompatibility().getTargetMinecraftVersion().toString()));
                     return CommandResult.success();
                 })
                 .build();

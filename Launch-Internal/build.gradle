@@ -7,6 +7,9 @@ version = '1.0.0'
 
 repositories {
     mavenCentral()
+    maven {
+        url "https://hub.spigotmc.org/nexus/content/repositories/snapshots"
+    }
 }
 
 java {
@@ -23,6 +26,9 @@ dependencies {
     implementation project(":Wrapper")
 
     implementation 'org.spongepowered:spongeapi:' + property("SPONGE_VERSION")
+
+    implementation 'io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT'
+
 
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'

@@ -1,13 +1,13 @@
 package org.soak.plugin;
 
 import com.google.inject.Inject;
+import net.kyori.adventure.util.Services;
 import org.apache.logging.log4j.Logger;
 import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.mosestream.MoseStream;
-import org.soak.Compatibility;
 import org.soak.WrapperManager;
 import org.soak.commands.soak.SoakCommand;
 import org.soak.config.SoakConfiguration;
@@ -44,6 +44,7 @@ import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.ServiceLoader;
 import java.util.logging.ConsoleHandler;
 import java.util.stream.Stream;
 
@@ -54,7 +55,6 @@ public class SoakPlugin implements SoakExternalManager, WrapperManager {
     private final SoakConfiguration configuration;
     private final PluginContainer container;
     private final Logger logger;
-    private final Compatibility compatibility;
     private final SoakMemoryStore memoryStore = new SoakMemoryStore();
 
     private final SoakServerProperties serverProperties = new SoakServerProperties();
@@ -66,7 +66,6 @@ public class SoakPlugin implements SoakExternalManager, WrapperManager {
         GlobalSoakData.MANAGER_INSTANCE = this;
         this.container = pluginContainer;
         this.logger = logger;
-        this.compatibility = new Compatibility();
         try {
             Path path = Sponge.configManager().pluginConfig(this.container).configPath();
             this.configuration = new SoakConfiguration(path.toFile());
@@ -202,10 +201,6 @@ public class SoakPlugin implements SoakExternalManager, WrapperManager {
         });
         thread.setName("unblocker");
         thread.start();
-    }
-
-    public Compatibility getCompatibility() {
-        return this.compatibility;
     }
 
     @Listener

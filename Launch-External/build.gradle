@@ -31,6 +31,9 @@ dependencies {
     implementation 'net.minecraftforge:forgespi:6.0.0'
     //implementation 'commons-lang:commons-lang:2.6' //included with bukkit -> forced onto forge
 
+    implementation 'io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT'
+
+
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
 }
@@ -50,6 +53,8 @@ jar {
                 || it.name.startsWith("CollectionStream")
                 || it.name.startsWith("json-simple")
                 || it.name.startsWith("paperlib")
+                || it.name.startsWith("byte-buddy-")
+                || it.name.startsWith("paper-api-")
         /*|| it.name.equals("commons-lang-2.6.jar")*/
     }.collect { it.isDirectory() ? it : zipTree(it) }
 

@@ -3,7 +3,6 @@ package org.soak.plugin;
 import org.apache.logging.log4j.Logger;
 import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.bukkit.plugin.Plugin;
-import org.soak.Compatibility;
 import org.soak.exception.NMSUsageException;
 import org.spongepowered.api.Platform;
 import org.spongepowered.api.Sponge;
@@ -42,8 +41,6 @@ public interface SoakManager {
     ConsoleHandler getConsole();
 
     ArtifactVersion getVersion();
-
-    Compatibility getCompatibility();
 
     default SoakPluginContainer getContainer(Plugin plugin) {
         return getBukkitContainers().filter(pc -> pc.getBukkitInstance().equals(plugin)).findAny().orElseThrow(() -> new RuntimeException("A plugin instance was created for " + plugin.getName() + " but no container could be found"));
@@ -97,9 +94,6 @@ public interface SoakManager {
             logger.error("|- " + key + ": " + value);
         });
         logger.error("|- Soak version: " + this.getVersion().toString());
-        logger.error("|- Compatibility: " + this.getCompatibility().getName());
-        logger.error("|- Compatibility version: " + this.getCompatibility().getVersion());
-        logger.error("|- Compatibility Minecraft version: " + this.getCompatibility().getTargetMinecraftVersion());
         logger.error("|- Minecraft version: " + Sponge.platform().minecraftVersion().name());
         logger.error("|- Sponge API version: " + Sponge.platform()
                 .container(Platform.Component.API)
