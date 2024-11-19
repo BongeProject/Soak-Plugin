@@ -55,6 +55,7 @@ jar {
                 || it.name.startsWith("paperlib")
                 || it.name.startsWith("byte-buddy-")
                 || it.name.startsWith("paper-api-")
+                || it.name.startsWith("adventure-text-logger-slf4j-")
         /*|| it.name.equals("commons-lang-2.6.jar")*/
     }.collect { it.isDirectory() ? it : zipTree(it) }
 

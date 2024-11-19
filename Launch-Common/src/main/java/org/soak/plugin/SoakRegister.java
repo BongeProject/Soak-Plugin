@@ -30,7 +30,7 @@ class SoakRegister {
 
     }*/
 
-    public static void startPotionEffects(Logger logger) {
+    /*public static void startPotionEffects(Logger logger) {
         logger.info("Registering Potion Effect Types");
         Registry<PotionEffectType> registry = RegistryTypes.POTION_EFFECT_TYPE.get();
 
@@ -106,5 +106,5 @@ class SoakRegister {
                 });
 
         //org.bukkit.potion.PotionEffectType.stopAcceptingRegistrations();
-    }
+    }*/
 }

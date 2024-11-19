@@ -12,7 +12,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-public class SoakRegistry<SpongeType, R extends Keyed> implements org.bukkit.Registry<R> {
+public class SoakRegistry<SpongeType, R extends Keyed> implements ISoakRegistry<R> {
 
     private final Function<Registry<SpongeType>, Stream<R>> to;
     private final Supplier<Registry<SpongeType>> reg;
@@ -22,6 +22,10 @@ public class SoakRegistry<SpongeType, R extends Keyed> implements org.bukkit.Reg
         this.to = to;
         this.reg = supplier;
         this.bukkitKey = key;
+    }
+
+    static <ST, BR extends Keyed> SoakRegistry<ST, BR> simple(RegistryKey<BR> key, Supplier<Registry<ST>> supplier, Function<ST, BR> map) {
+        return new SoakRegistry<>(key, supplier, reg -> reg.stream().map(map));
     }
 
     public RegistryKey<R> key() {
@@ -47,9 +51,5 @@ public class SoakRegistry<SpongeType, R extends Keyed> implements org.bukkit.Reg
     @Override
     public Iterator<R> iterator() {
         return stream().iterator();
-    }
-
-    static <ST, BR extends Keyed> SoakRegistry<ST, BR> simple(RegistryKey<BR> key, Supplier<Registry<ST>> supplier, Function<ST, BR> map) {
-        return new SoakRegistry<>(key, supplier, reg -> reg.stream().map(map));
     }
 }

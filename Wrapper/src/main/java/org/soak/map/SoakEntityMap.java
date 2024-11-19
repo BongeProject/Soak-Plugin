@@ -1,5 +1,6 @@
 package org.soak.map;
 
+import org.bukkit.entity.Wolf;
 import org.spongepowered.api.entity.EntityType;
 import org.spongepowered.api.entity.EntityTypes;
 

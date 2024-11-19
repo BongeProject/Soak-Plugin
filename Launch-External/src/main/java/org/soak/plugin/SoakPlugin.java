@@ -150,7 +150,7 @@ public class SoakPlugin implements SoakExternalManager, WrapperManager {
     @Listener(order = Order.FIRST)
     public void startingPlugin(StartingEngineEvent<Server> event) {
         //SoakRegister.startEnchantmentTypes(this.logger);
-        SoakRegister.startPotionEffects(this.logger);
+        //SoakRegister.startPotionEffects(this.logger);
         PortalCooldownCustomData.createTickScheduler();
     }
 
