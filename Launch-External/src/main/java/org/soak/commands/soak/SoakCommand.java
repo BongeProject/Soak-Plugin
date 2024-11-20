@@ -8,15 +8,30 @@ import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.soak.commands.SoakArguments;
+import org.soak.generate.bukkit.MaterialList;
 import org.soak.plugin.SoakManager;
 import org.soak.plugin.SoakPlugin;
 import org.soak.plugin.SoakPluginContainer;
-import org.spongepowered.api.Sponge;
+import org.spongepowered.api.block.BlockType;
+import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.command.Command;
+import org.spongepowered.api.command.CommandCompletion;
 import org.spongepowered.api.command.CommandResult;
+import org.spongepowered.api.command.exception.ArgumentParseException;
+import org.spongepowered.api.command.parameter.ArgumentReader;
+import org.spongepowered.api.command.parameter.CommandContext;
 import org.spongepowered.api.command.parameter.Parameter;
+import org.spongepowered.api.command.parameter.managed.ValueCompleter;
+import org.spongepowered.api.command.parameter.managed.ValueParser;
+import org.spongepowered.api.command.parameter.managed.clientcompletion.ClientCompletionType;
+import org.spongepowered.api.command.parameter.managed.clientcompletion.ClientCompletionTypes;
+import org.spongepowered.api.item.ItemType;
+import org.spongepowered.api.item.ItemTypes;
+import org.spongepowered.api.registry.RegistryTypes;
 
 import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class SoakCommand {
@@ -24,9 +39,9 @@ public class SoakCommand {
     private static Command.Parameterized createCommandsForCommand() {
         Parameter.Value<SoakPluginContainer> pluginParameter = SoakArguments.soakPlugins(((context, pluginContainer) -> {
                     return !pluginContainer.getBukkitInstance()
-                                            .getDescription()
-                                            .getCommands()
-                                            .isEmpty();
+                            .getDescription()
+                            .getCommands()
+                            .isEmpty();
                 }))
                 .key("plugin")
                 .build();
@@ -85,10 +100,84 @@ public class SoakCommand {
                 .build();
     }
 
+    public static Command.Parameterized createMaterialList() {
+        return Command.builder()
+                .addChild(createMaterialBlockFind(), "block", "b")
+                .addChild(createMaterialItemFind(), "item", "i")
+                .executor(context -> {
+                    MaterialList.values().stream().sorted(Comparator.comparing(Enum::name)).forEach(mat -> {
+                        String item = MaterialList.getItemType(mat).map(t -> t.key(RegistryTypes.ITEM_TYPE).asString()).orElse("NONE");
+                        String block = MaterialList.getBlockType(mat).map(t -> t.key(RegistryTypes.BLOCK_TYPE).asString()).orElse("NONE");
+                        Component component = Component.text(mat.name() + "(Item: " + item + ", Block: " + block + ")");
+
+                        context.sendMessage(component);
+                    });
+                    return CommandResult.success();
+                })
+                .build();
+    }
+
+    public static Command.Parameterized createMaterialItemFind() {
+        var itemParameter = Parameter.builder(ItemType.class).key("item").addParser(new ValueParser<ItemType>() {
+                    @Override
+                    public Optional<? extends ItemType> parseValue(Parameter.Key<? super ItemType> parameterKey, ArgumentReader.Mutable reader, CommandContext.Builder context) throws ArgumentParseException {
+                        var key = reader.parseResourceKey();
+                        return ItemTypes.registry().findValue(key);
+                    }
+
+                    @Override
+                    public List<ClientCompletionType> clientCompletionType() {
+                        return List.of(ClientCompletionTypes.RESOURCE_KEY.get());
+                    }
+                })
+                .completer((context, currentInput) -> ItemTypes
+                        .registry()
+                        .stream()
+                        .map(itemType -> itemType.key(RegistryTypes.ITEM_TYPE).asString())
+                        .filter(itemTypeString -> itemTypeString.startsWith(currentInput))
+                        .map(CommandCompletion::of)
+                        .toList())
+                .build();
+        return Command.builder().addParameter(itemParameter).executor(context -> {
+            var t = context.requireOne(itemParameter);
+            context.sendMessage(Component.text(MaterialList.value(t).name()));
+            return CommandResult.success();
+        }).build();
+    }
+
+    public static Command.Parameterized createMaterialBlockFind() {
+        var itemParameter = Parameter.builder(BlockType.class).key("block").addParser(new ValueParser<BlockType>() {
+                    @Override
+                    public Optional<? extends BlockType> parseValue(Parameter.Key<? super BlockType> parameterKey, ArgumentReader.Mutable reader, CommandContext.Builder context) throws ArgumentParseException {
+                        var key = reader.parseResourceKey();
+                        return BlockTypes.registry().findValue(key);
+                    }
+
+                    @Override
+                    public List<ClientCompletionType> clientCompletionType() {
+                        return List.of(ClientCompletionTypes.RESOURCE_KEY.get());
+                    }
+                })
+                .completer((context, currentInput) -> BlockTypes
+                        .registry()
+                        .stream()
+                        .map(blockType -> blockType.key(RegistryTypes.BLOCK_TYPE).asString())
+                        .filter(blockTypeString -> blockTypeString.startsWith(currentInput))
+                        .map(CommandCompletion::of)
+                        .toList())
+                .build();
+        return Command.builder().addParameter(itemParameter).executor(context -> {
+            var t = context.requireOne(itemParameter);
+            context.sendMessage(Component.text(MaterialList.value(t).name()));
+            return CommandResult.success();
+        }).build();
+    }
+
     public static Command.Parameterized createSoakCommand() {
         return Command.builder()
                 .addChild(createPluginsCommand(), "plugins", "pl")
                 .addChild(createInfoCommand(), "info")
+                .addChild(createMaterialList(), "material")
                 .build();
     }
 

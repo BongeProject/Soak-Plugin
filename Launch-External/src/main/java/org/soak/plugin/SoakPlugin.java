@@ -15,6 +15,7 @@ import org.soak.config.SoakConfiguration;
 import org.soak.data.sponge.PortalCooldownCustomData;
 import org.soak.data.sponge.SoakKeys;
 import org.soak.fix.forge.ForgeFixCommons;
+import org.soak.generate.bukkit.EntityTypeList;
 import org.soak.generate.bukkit.MaterialList;
 import org.soak.hook.event.HelpMapListener;
 import org.soak.io.SoakServerProperties;
@@ -88,9 +89,14 @@ public class SoakPlugin implements SoakExternalManager, WrapperManager {
     private void generateMaterial(RegisterRegistryValueEvent.EngineScoped<Server> event) {
         try {
             var classLoader = SoakPlugin.class.getClassLoader();
+
             var materialList = MaterialList.createMaterialList();
             MaterialList.LOADED_CLASS = materialList.load(classLoader, ClassLoadingStrategy.Default.INJECTION).getLoaded();
             generatedClasses.add(MaterialList.LOADED_CLASS);
+
+            var entityTypeList = EntityTypeList.createEntityTypeList();
+            EntityTypeList.LOADED_CLASS = entityTypeList.load(classLoader, ClassLoadingStrategy.Default.INJECTION).getLoaded();
+            generatedClasses.add(EntityTypeList.LOADED_CLASS);
         } catch (Exception e) {
             e.printStackTrace();
         }

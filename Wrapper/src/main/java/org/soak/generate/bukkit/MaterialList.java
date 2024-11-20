@@ -1,18 +1,13 @@
 package org.soak.generate.bukkit;
 
 import net.bytebuddy.ByteBuddy;
-import net.bytebuddy.description.method.MethodDescription;
-import net.bytebuddy.description.modifier.ModifierContributor;
-import net.bytebuddy.description.type.TypeDefinition;
 import net.bytebuddy.dynamic.DynamicType;
-import net.bytebuddy.implementation.Implementation;
 import net.bytebuddy.implementation.MethodCall;
 import net.bytebuddy.implementation.bytecode.assign.Assigner;
 import net.bytebuddy.jar.asm.Opcodes;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.ComponentLike;
 import net.kyori.adventure.text.TranslatableComponent;
-import org.bukkit.Material;
 import org.bukkit.block.BlockType;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.inventory.ItemType;
@@ -29,16 +24,15 @@ import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.registry.RegistryTypes;
 import org.spongepowered.api.state.StateContainer;
 
-import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class MaterialList {
 
-    public static Class<? extends Enum<?>> LOADED_CLASS;
     public static final Map<String, org.spongepowered.api.block.BlockType> BLOCK_TYPE_MAP = new HashMap<>();
     public static final Map<String, org.spongepowered.api.item.ItemType> ITEM_TYPE_MAP = new HashMap<>();
+    public static Class<? extends Enum<?>> LOADED_CLASS;
 
     public static DynamicType.Unloaded<? extends Enum<?>> createMaterialList() throws Exception {
         var blockIterator = BlockTypes.registry().stream().iterator();
@@ -53,11 +47,12 @@ public class MaterialList {
             BLOCK_TYPE_MAP.put(name, blockType);
 
             blockType.item().ifPresent(itemType -> {
+                if (BlockTypes.registry().findValue(blockType.key(RegistryTypes.BLOCK_TYPE)).isPresent()) {
+                    return;
+                }
                 completedItems.add(itemType);
                 ITEM_TYPE_MAP.put(name, itemType);
             });
-
-
         }
         var itemIterator = ItemTypes.registry().stream().iterator();
         while (itemIterator.hasNext()) {
@@ -90,7 +85,7 @@ public class MaterialList {
 
     }
 
-    private static String toName(ResourceKey key) {
+     static String toName(ResourceKey key) {
         var prefix = key.namespace().equals(ResourceKey.MINECRAFT_NAMESPACE) ? "" : toEnumName(key.namespace() + "_");
         return prefix + toEnumName(key.value());
     }
@@ -293,7 +288,7 @@ public class MaterialList {
         }
     }
 
-    private static String toEnumName(String name) {
+    static String toEnumName(String name) {
         return name.toUpperCase().replace(" ", "_");
     }
 }
