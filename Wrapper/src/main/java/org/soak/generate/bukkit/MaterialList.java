@@ -1,12 +1,18 @@
 package org.soak.generate.bukkit;
 
 import net.bytebuddy.ByteBuddy;
+import net.bytebuddy.description.method.MethodDescription;
+import net.bytebuddy.description.modifier.ModifierContributor;
+import net.bytebuddy.description.type.TypeDefinition;
 import net.bytebuddy.dynamic.DynamicType;
+import net.bytebuddy.implementation.Implementation;
 import net.bytebuddy.implementation.MethodCall;
+import net.bytebuddy.implementation.bytecode.assign.Assigner;
+import net.bytebuddy.jar.asm.Opcodes;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.ComponentLike;
 import net.kyori.adventure.text.TranslatableComponent;
-import org.apache.maven.model.Resource;
+import org.bukkit.Material;
 import org.bukkit.block.BlockType;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.inventory.ItemType;
@@ -23,25 +29,35 @@ import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.registry.RegistryTypes;
 import org.spongepowered.api.state.StateContainer;
 
+import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 public class MaterialList {
 
     public static Class<? extends Enum<?>> LOADED_CLASS;
+    public static final Map<String, org.spongepowered.api.block.BlockType> BLOCK_TYPE_MAP = new HashMap<>();
+    public static final Map<String, org.spongepowered.api.item.ItemType> ITEM_TYPE_MAP = new HashMap<>();
 
-    public static DynamicType.Unloaded<? extends Enum<?>> createMaterialList(ClassLoader loader) throws Exception {
+    public static DynamicType.Unloaded<? extends Enum<?>> createMaterialList() throws Exception {
         var blockIterator = BlockTypes.registry().stream().iterator();
         var completedItems = new HashSet<org.spongepowered.api.item.ItemType>();
         var materials = new HashSet<String>();
         while (blockIterator.hasNext()) {
             var blockType = blockIterator.next();
-            blockType.item().ifPresent(completedItems::add);
-
             var key = blockType.key(RegistryTypes.BLOCK_TYPE);
-            materials.add(toName(key));
+            var name = toName(key);
+            materials.add(name);
+
+            BLOCK_TYPE_MAP.put(name, blockType);
+
+            blockType.item().ifPresent(itemType -> {
+                completedItems.add(itemType);
+                ITEM_TYPE_MAP.put(name, itemType);
+            });
+
+
         }
         var itemIterator = ItemTypes.registry().stream().iterator();
         while (itemIterator.hasNext()) {
@@ -50,7 +66,9 @@ public class MaterialList {
                 continue;
             }
             var key = itemType.key(RegistryTypes.ITEM_TYPE);
-            materials.add(toName(key));
+            var name = toName(key);
+            materials.add(name);
+            ITEM_TYPE_MAP.put(name, itemType);
         }
 
         var classCreator = new ByteBuddy()
@@ -65,6 +83,9 @@ public class MaterialList {
         classCreator = buildGetBlastResistanceMethod(classCreator);
         classCreator = buildGetTranslationKeyMethod(classCreator);
         classCreator = buildGetCompostChanceMethod(classCreator);
+        classCreator = buildIsLegacy(classCreator);
+
+        classCreator = buildStaticMatchMaterial(classCreator);
         return classCreator.make();
 
     }
@@ -82,21 +103,35 @@ public class MaterialList {
     }
 
     public static <T extends Enum<T>> T value(org.spongepowered.api.item.ItemType type) {
-        EnumSet<T> set = values();
-        return set
+        var enumName = ITEM_TYPE_MAP
+                .entrySet()
                 .stream()
-                .filter(material -> material.name().equals(toName(type.key(RegistryTypes.ITEM_TYPE))))
+                .filter(entry -> entry.getValue().equals(type))
                 .findAny()
+                .map(Map.Entry::getKey)
                 .orElseThrow(() -> new IllegalStateException(type.key(RegistryTypes.ITEM_TYPE).asString() + " is not in material enum"));
+        EnumSet<T> values = values();
+        return values
+                .stream()
+                .filter(enumValue -> enumValue.name().equals(enumName))
+                .findAny()
+                .orElseThrow(() -> new RuntimeException("Found Material name of '" + enumName + "' but couldnt find the enum"));
     }
 
     public static <T extends Enum<T>> T value(org.spongepowered.api.block.BlockType type) {
-        EnumSet<T> set = values();
-        return set
+        var enumName = BLOCK_TYPE_MAP
+                .entrySet()
                 .stream()
-                .filter(material -> material.name().equals(toName(type.key(RegistryTypes.BLOCK_TYPE))))
+                .filter(entry -> entry.getValue().equals(type))
                 .findAny()
+                .map(Map.Entry::getKey)
                 .orElseThrow(() -> new IllegalStateException(type.key(RegistryTypes.BLOCK_TYPE).asString() + " is not in material enum"));
+        EnumSet<T> values = values();
+        return values
+                .stream()
+                .filter(enumValue -> enumValue.name().equals(enumName))
+                .findAny()
+                .orElseThrow(() -> new RuntimeException("Found Material name of '" + enumName + "' but couldnt find the enum"));
     }
 
     private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> buildAsBlockTypeMethod(DynamicType.Builder<? extends Enum<?>> builder) throws NoSuchMethodException {
@@ -108,21 +143,19 @@ public class MaterialList {
     }
 
     private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> buildCreateBlockDataMethod(DynamicType.Builder<? extends Enum<?>> builder) throws NoSuchMethodException {
-        return callMethod(builder, "createBlockData", BlockData.class, MethodCall::withAllArguments);
-
+        return callMethod(builder, "createBlockData", BlockData.class);
     }
 
     private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> buildCreateBlockDataStringArgumentMethod(DynamicType.Builder<? extends Enum<?>> builder) throws NoSuchMethodException {
-        return callMethod(builder, "createBlockData", BlockData.class, MethodCall::withAllArguments, String.class);
-
+        return callMethod(builder, "createBlockData", BlockData.class, call -> call.withArgument(0), String.class);
     }
 
     private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> buildCreateBlockDataConsumerArgumentMethod(DynamicType.Builder<? extends Enum<?>> builder) throws NoSuchMethodException {
-        return callMethod(builder, "createBlockData", BlockData.class, MethodCall::withAllArguments, Consumer.class);
+        return callMethod(builder, "createBlockData", BlockData.class, call -> call.withArgument(0), Consumer.class);
     }
 
     private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> buildGetBlastResistanceMethod(DynamicType.Builder<? extends Enum<?>> builder) throws NoSuchMethodException {
-        return callMethod(builder, "getBlastResisance", float.class, MethodCall::withAllArguments);
+        return callMethod(builder, "getBlastResistance", float.class);
     }
 
     private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> buildGetTranslationKeyMethod(DynamicType.Builder<? extends Enum<?>> builder) throws NoSuchMethodException {
@@ -131,6 +164,14 @@ public class MaterialList {
 
     private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> buildGetCompostChanceMethod(DynamicType.Builder<? extends Enum<?>> builder) throws NoSuchMethodException {
         return callMethod(builder, "getCompostChance", float.class);
+    }
+
+    private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> buildIsLegacy(DynamicType.Builder<? extends Enum<?>> builder) throws NoSuchMethodException {
+        return callMethod(builder, "isLegacy", boolean.class);
+    }
+
+    private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> buildStaticMatchMaterial(DynamicType.Builder<? extends Enum<?>> builder) throws NoSuchMethodException {
+        return callStaticMethodReturnSelf(builder, "matchMaterial", MethodCall::withAllArguments, String.class);
     }
 
 
@@ -147,39 +188,31 @@ public class MaterialList {
                         .getMethod(method, arguments.toArray(Class[]::new)))
                 .withThis());
 
-        return builder.defineMethod(method, returnType)
-                .withParameters(arguments)
+        return builder.defineMethod(method, returnType, Opcodes.ACC_PUBLIC)
+                .withParameters(parameters)
+                .intercept(call);
+    }
+
+    private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> callStaticMethodReturnSelf(DynamicType.Builder<? extends Enum<?>> builder, String method, Class<?>... arguments) throws NoSuchMethodException {
+        return callStaticMethodReturnSelf(builder, method, extra -> extra, arguments);
+    }
+
+    private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> callStaticMethodReturnSelf(DynamicType.Builder<? extends Enum<?>> builder, String method, Function<MethodCall, MethodCall> extra, Class<?>... parameters) throws NoSuchMethodException {
+
+        var call = extra.apply(MethodCall
+                .invoke(MaterialList.class
+                        .getMethod(method, parameters))).withAssigner(Assigner.DEFAULT, Assigner.Typing.DYNAMIC);
+        return builder.defineMethod(method, builder.toTypeDescription(), Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC)
+                .withParameters(parameters)
                 .intercept(call);
     }
 
     public static Optional<org.spongepowered.api.block.BlockType> getBlockType(Enum<?> enumEntry) {
-        var name = enumEntry.name();
-
-        return BlockTypes.registry().stream().filter(type -> {
-            var key = type.key(RegistryTypes.BLOCK_TYPE);
-            var suffix = toEnumName(key.value());
-            if (suffix.equals(name)) {
-                //minecraft namespaces
-                return true;
-            }
-            var compare = toEnumName(key.namespace()) + "_" + suffix;
-            return compare.equals(name);
-        }).findAny();
+        return Optional.ofNullable(BLOCK_TYPE_MAP.get(enumEntry.name()));
     }
 
     public static Optional<org.spongepowered.api.item.ItemType> getItemType(Enum<?> enumEntry) {
-        var name = enumEntry.name();
-
-        return ItemTypes.registry().stream().filter(type -> {
-            var key = type.key(RegistryTypes.ITEM_TYPE);
-            var suffix = toEnumName(key.value());
-            if (suffix.equals(name)) {
-                //minecraft namespaces
-                return true;
-            }
-            var compare = toEnumName(key.namespace()) + "_" + suffix;
-            return compare.equals(name);
-        }).findAny();
+        return Optional.ofNullable(ITEM_TYPE_MAP.get(enumEntry.name()));
     }
 
     public static BlockType asBlockType(Enum<?> enumEntry) {
@@ -187,7 +220,7 @@ public class MaterialList {
     }
 
     public static ItemType asItemType(Enum<?> enumEntry) {
-        throw NotImplementedException.createByLazy(enumEntry, "asBlockType");
+        throw NotImplementedException.createByLazy(enumEntry, "asItemType");
     }
 
     public static BlockData createBlockData(Enum<?> enumEntry) {
@@ -215,11 +248,15 @@ public class MaterialList {
         return getBlockType(enumEntry).flatMap(type -> type.get(Keys.BLAST_RESISTANCE)).orElse(0.0).floatValue();
     }
 
+    public static boolean isLegacy(Enum<?> enumEntry) {
+        return enumEntry.name().startsWith("LEGACY_");
+    }
+
     public static float getCompostChance(Enum<?> enumEntry) {
         throw NotImplementedException.createByLazy(enumEntry, "getCompostChance");
     }
 
-    private @Nullable String getTranslationKey(ComponentLike item) {
+    private static @Nullable String getTranslationKey(ComponentLike item) {
         Component component = item.asComponent();
         if (component instanceof TranslatableComponent) {
             return ((TranslatableComponent) component).key();
@@ -227,12 +264,33 @@ public class MaterialList {
         return null;
     }
 
-    public @NotNull String getTranslationKey(Enum<?> enumEntry) {
+    public static @NotNull String getTranslationKey(Enum<?> enumEntry) {
         return getItemType(enumEntry)
                 .map(item -> getTranslationKey(item.asComponent()))
                 .or(() -> getBlockType(enumEntry)
                         .map(block -> getTranslationKey(block.asComponent())))
                 .orElseThrow(() -> new IllegalStateException("The material of " + enumEntry.name() + " does not have a translation key. Bukkit does not expect this."));
+    }
+
+    public static @Nullable Enum<?> getMaterial(ResourceKey key) {
+        var opBlockType = BlockTypes.registry().findValue(key);
+        if (opBlockType.isPresent()) {
+            return value(opBlockType.get());
+        }
+
+        var opItemType = ItemTypes.registry().findValue(key);
+        return opItemType.<Enum<?>>map(MaterialList::value).orElse(null);
+    }
+
+    public static Enum<?> matchMaterial(String name) {
+        name = name.toLowerCase();
+        name = name.replaceAll(" ", "_");
+        ResourceKey key = ResourceKey.resolve(name);
+        try {
+            return getMaterial(key);
+        } catch (RuntimeException e) {
+            return null;
+        }
     }
 
     private static String toEnumName(String name) {

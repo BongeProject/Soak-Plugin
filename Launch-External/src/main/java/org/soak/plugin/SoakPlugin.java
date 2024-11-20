@@ -1,6 +1,7 @@
 package org.soak.plugin;
 
 import com.google.inject.Inject;
+import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
 import net.kyori.adventure.util.Services;
 import org.apache.logging.log4j.Logger;
 import org.apache.maven.artifact.versioning.ArtifactVersion;
@@ -14,6 +15,7 @@ import org.soak.config.SoakConfiguration;
 import org.soak.data.sponge.PortalCooldownCustomData;
 import org.soak.data.sponge.SoakKeys;
 import org.soak.fix.forge.ForgeFixCommons;
+import org.soak.generate.bukkit.MaterialList;
 import org.soak.hook.event.HelpMapListener;
 import org.soak.io.SoakServerProperties;
 import org.soak.plugin.external.SoakConfig;
@@ -36,6 +38,7 @@ import org.spongepowered.api.event.Order;
 import org.spongepowered.api.event.lifecycle.*;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.item.inventory.ItemStackSnapshot;
+import org.spongepowered.api.registry.RegistryTypes;
 import org.spongepowered.configurate.ConfigurateException;
 import org.spongepowered.plugin.PluginContainer;
 
@@ -44,7 +47,10 @@ import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.ServiceLoader;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.ConsoleHandler;
 import java.util.stream.Stream;
 
@@ -59,6 +65,8 @@ public class SoakPlugin implements SoakExternalManager, WrapperManager {
 
     private final SoakServerProperties serverProperties = new SoakServerProperties();
     private final ConsoleHandler consoleHandler = new ConsoleHandler();
+
+    public final Collection<Class<?>> generatedClasses = new LinkedBlockingQueue<>();
 
     @Inject
     public SoakPlugin(PluginContainer pluginContainer, Logger logger) {
@@ -76,6 +84,18 @@ public class SoakPlugin implements SoakExternalManager, WrapperManager {
         }
     }
 
+    @Listener
+    private void generateMaterial(RegisterRegistryValueEvent.EngineScoped<Server> event) {
+        try {
+            var classLoader = SoakPlugin.class.getClassLoader();
+            var materialList = MaterialList.createMaterialList();
+            MaterialList.LOADED_CLASS = materialList.load(classLoader, ClassLoadingStrategy.Default.INJECTION).getLoaded();
+            generatedClasses.add(MaterialList.LOADED_CLASS);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public static SoakPlugin plugin() {
         return plugin;
     }
@@ -87,6 +107,11 @@ public class SoakPlugin implements SoakExternalManager, WrapperManager {
     @Override
     public Logger getLogger() {
         return this.logger;
+    }
+
+    @Override
+    public Collection<Class<?>> generatedClasses() {
+        return Collections.unmodifiableCollection(this.generatedClasses);
     }
 
     @Override

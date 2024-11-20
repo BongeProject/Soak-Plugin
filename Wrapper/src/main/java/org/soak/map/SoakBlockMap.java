@@ -4,6 +4,7 @@ import org.bukkit.Material;
 import org.soak.generate.bukkit.MaterialList;
 import org.spongepowered.api.block.BlockType;
 
+import java.util.Arrays;
 import java.util.Optional;
 
 public class SoakBlockMap {
@@ -13,7 +14,7 @@ public class SoakBlockMap {
     }
 
     //well done Paper, might just come back to paper because of that change
-    public static org.bukkit.block.BlockType toBukkitType(BlockType type){
+    public static org.bukkit.block.BlockType toBukkitType(BlockType type) {
         //doing this way for the time being
         return toBukkit(type).asBlockType();
     }

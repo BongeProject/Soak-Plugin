@@ -104,6 +104,16 @@ public class SoakPluginClassLoader extends URLClassLoader implements ConfiguredP
     }
 
     @Override
+    protected Class<?> findClass(String name) throws ClassNotFoundException {
+        var generatedClasses = SoakManager.getManager().generatedClasses();
+        var foundGeneratedClass = generatedClasses.stream().filter(clazz -> clazz.getName().equals(name)).findAny();
+        if (foundGeneratedClass.isPresent()) {
+            return foundGeneratedClass.get();
+        }
+        return super.findClass(name);
+    }
+
+    @Override
     public void init(JavaPlugin javaPlugin) {
         setupPlugin(javaPlugin, this.getConfiguration().getName(), this.context.getPluginSource().toFile(), new File(this.context.getDataDirectory().toFile(), "config.yml"), this.context.getDataDirectory().toFile(), this::getConfiguration, () -> this);
     }

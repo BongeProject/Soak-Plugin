@@ -39,7 +39,7 @@ public class BukkitRawCommand implements Command.Raw {
                 return rawCommand;
             }
             return rawCommand.substring(0, index);
-        }).orElse("");
+        }).orElse(this.command.getName());
         String[] args = arguments.input().split(" ");
         try {
             boolean result = this.command.execute(SoakSubjectMap.mapToBukkit(cause.subject()), command, args);

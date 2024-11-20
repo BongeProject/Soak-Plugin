@@ -40,6 +40,7 @@ import org.jetbrains.annotations.Nullable;
 import org.soak.exception.NotImplementedException;
 import org.soak.map.item.SoakItemStackMap;
 import org.soak.plugin.SoakManager;
+import org.soak.wrapper.plugin.lifecycle.event.SoakLifecycleEventManager;
 import org.spongepowered.api.ResourceKey;
 import org.spongepowered.api.data.Key;
 import org.spongepowered.api.data.Keys;
@@ -351,7 +352,9 @@ public class SoakUnsafeValues implements UnsafeValues {
 
     @Override
     public LifecycleEventManager<Plugin> createPluginLifecycleEventManager(JavaPlugin javaPlugin, BooleanSupplier booleanSupplier) {
-        throw NotImplementedException.createByLazy(UnsafeValues.class, "createPluginLifecycleEventManager", JavaPlugin.class, BooleanSupplier.class);
+        boolean test = booleanSupplier.getAsBoolean();
+        //TODO work this one out, not on javadocs
+        return new SoakLifecycleEventManager<>();
     }
 
     @Override

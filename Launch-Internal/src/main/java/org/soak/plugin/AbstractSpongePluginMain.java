@@ -35,6 +35,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.function.Function;
 import java.util.logging.ConsoleHandler;
@@ -53,6 +54,7 @@ public class AbstractSpongePluginMain implements SoakInternalManager, WrapperMan
     private final SoakServerProperties serverProperties = new SoakServerProperties();
     private final ConsoleHandler consoleHandler = new ConsoleHandler();
     private final SoakMemoryStore memoryStore = new SoakMemoryStore();
+    private final Collection<Class<?>> generatedClasses = new LinkedBlockingQueue<>();
     @Nullable
     private URLClassLoader loader;
 
@@ -192,6 +194,11 @@ public class AbstractSpongePluginMain implements SoakInternalManager, WrapperMan
     @Override
     public Logger getLogger() {
         return this.logger;
+    }
+
+    @Override
+    public Collection<Class<?>> generatedClasses() {
+        return Collections.unmodifiableCollection(this.generatedClasses);
     }
 
     @Override

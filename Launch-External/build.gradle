@@ -1,3 +1,5 @@
+import java.util.stream.Collectors
+
 plugins {
     id 'java'
 }
@@ -32,6 +34,7 @@ dependencies {
     //implementation 'commons-lang:commons-lang:2.6' //included with bukkit -> forced onto forge
 
     implementation 'io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT'
+    implementation 'net.bytebuddy:byte-buddy:1.15.10'
 
 
     testImplementation platform('org.junit:junit-bom:5.10.0')
@@ -43,9 +46,9 @@ jar {
 
     dependsOn(":MoseStream:jar")
     dependsOn(":CollectionStream:jar")
+    dependsOn(":Override:jar")
 
     var fat = configurations.runtimeClasspath.filter {
-        System.out.println("Name: " + it.name);
         return it.name.startsWith("Launch-Common")
                 || it.name.startsWith("Common-")
                 || it.name.startsWith("Wrapper-")
@@ -56,11 +59,31 @@ jar {
                 || it.name.startsWith("byte-buddy-")
                 || it.name.startsWith("paper-api-")
                 || it.name.startsWith("adventure-text-logger-slf4j-")
+                || it.name.startsWith("bungeecord-chat-")
         /*|| it.name.equals("commons-lang-2.6.jar")*/
-    }.collect { it.isDirectory() ? it : zipTree(it) }
+    }.collect {
+        if (it.name.startsWith("paper-api-")) {
+            return zipTree(it).matching {
+                exclude "org/bukkit/configuration/file/YamlConfiguration.class"
+            }
+        }
+        it.isDirectory() ? it : zipTree(it)
+    }
+
+    var folder = project.file("../Override/build/libs/");
+    var files = folder.listFiles();
+    if (files != null && files.length != 0) {
+
+        var file = files[0]
+        fat.add(zipTree(file))
+    } else {
+        new RuntimeException("Overrides was not found, this may lead to some compatibility issues").printStackTrace()
+    }
+
+    var excludeList = new String[]{"Material.class"}
 
     from(fat).exclude {
-        return it.name == "Compatibility.class" && !it.file.absolutePath.contains("zip_");
+        return excludeList.contains(it.name);
     }
 }
 

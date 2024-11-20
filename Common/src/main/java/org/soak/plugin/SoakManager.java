@@ -10,6 +10,7 @@ import org.spongepowered.plugin.PluginContainer;
 
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -32,6 +33,8 @@ public interface SoakManager {
 
     Logger getLogger();
 
+    Collection<Class<?>> generatedClasses();
+
     Stream<SoakPluginContainer> getBukkitContainers();
 
     PluginContainer getOwnContainer();
@@ -46,7 +49,7 @@ public interface SoakManager {
         return getBukkitContainers().filter(pc -> pc.getBukkitInstance().equals(plugin)).findAny().orElseThrow(() -> new RuntimeException("A plugin instance was created for " + plugin.getName() + " but no container could be found"));
     }
 
-    default Optional<SoakPluginContainer> getContainer(PluginContainer plugin){
+    default Optional<SoakPluginContainer> getContainer(PluginContainer plugin) {
         return getBukkitContainers().filter(pc -> pc.equals(plugin) || pc.getTrueContainer().equals(plugin)).findAny();
     }
 
