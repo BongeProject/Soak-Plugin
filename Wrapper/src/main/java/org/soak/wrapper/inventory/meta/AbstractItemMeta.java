@@ -57,6 +57,21 @@ public abstract class AbstractItemMeta implements ItemMeta, Damageable {
         return this.container instanceof ItemStackSnapshot;
     }
 
+    public ItemStackLike sponge() {
+        return this.container;
+    }
+
+    public int quantity() {
+        return container.quantity();
+    }
+
+    public void setQuantity(int quantity) {
+        if (this.container instanceof ItemStackSnapshot snapshot) {
+            this.container = snapshot.asMutableCopy();
+        }
+        ((ItemStack) this.container).setQuantity(quantity);
+    }
+
     public void copyInto(ItemMeta meta) {
         if (!(meta instanceof AbstractItemMeta)) {
             throw new RuntimeException("ItemMeta must implement AbstractItemMeta");

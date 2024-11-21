@@ -16,6 +16,8 @@ import org.spongepowered.api.item.inventory.ItemStackLike;
 import org.spongepowered.api.item.inventory.ItemStackSnapshot;
 import org.spongepowered.api.tag.ItemTypeTags;
 
+import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Optional;
 import java.util.function.Function;
@@ -97,6 +99,17 @@ public class SoakItemStackMap {
         var stack = new org.bukkit.inventory.ItemStack(toBukkit(type), amount);
         stack.setItemMeta(toBukkitMeta(container));
         return stack;
+    }
+
+    public static AbstractItemMeta toBukkitMeta(ItemStackLike stack, @Nullable Class<? extends ItemMeta> publicClass) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+        var attempt = toBukkitMeta(stack);
+        if(publicClass == null || publicClass.isInstance(attempt)){
+            return attempt;
+        }
+
+        var metaType = new Class<?>[]{SoakPotionItemMeta.class, SoakFireworkEffectMeta.class, SoakSkullMeta.class, SoakLeatherArmorMeta.class};
+        var metaClass = Arrays.stream(metaType).filter(clazz -> clazz.isAssignableFrom(publicClass)).findAny().orElseThrow();
+        return (AbstractItemMeta) metaClass.getConstructor(ItemStackLike.class).newInstance(stack);
     }
 
     public static AbstractItemMeta toBukkitMeta(@NotNull ItemStackLike container) {

@@ -16,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
 import org.soak.WrapperManager;
 import org.soak.exception.NotImplementedException;
 import org.soak.plugin.SoakManager;
+import org.soak.wrapper.inventory.SoakItemTypeTyped;
 import org.spongepowered.api.ResourceKey;
 import org.spongepowered.api.block.BlockState;
 import org.spongepowered.api.block.BlockTypes;
@@ -215,7 +216,8 @@ public class MaterialList {
     }
 
     public static ItemType asItemType(Enum<?> enumEntry) {
-        throw NotImplementedException.createByLazy(enumEntry, "asItemType");
+        var spongeItemType = getItemType(enumEntry).orElseThrow();
+        return new SoakItemTypeTyped<>(spongeItemType);
     }
 
     public static BlockData createBlockData(Enum<?> enumEntry) {

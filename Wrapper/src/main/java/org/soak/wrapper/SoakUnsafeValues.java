@@ -40,6 +40,7 @@ import org.jetbrains.annotations.Nullable;
 import org.soak.exception.NotImplementedException;
 import org.soak.map.item.SoakItemStackMap;
 import org.soak.plugin.SoakManager;
+import org.soak.wrapper.inventory.SoakItemStack;
 import org.soak.wrapper.plugin.lifecycle.event.SoakLifecycleEventManager;
 import org.spongepowered.api.ResourceKey;
 import org.spongepowered.api.data.Key;
@@ -369,7 +370,7 @@ public class SoakUnsafeValues implements UnsafeValues {
 
     @Override
     public ItemStack createEmptyStack() {
-        return new ItemStack(Material.AIR);
+        return new SoakItemStack();
     }
 
     @Override
