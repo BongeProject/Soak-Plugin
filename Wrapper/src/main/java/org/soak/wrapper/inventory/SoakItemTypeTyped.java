@@ -16,6 +16,7 @@ import org.jetbrains.annotations.Unmodifiable;
 import org.soak.exception.NotImplementedException;
 import org.soak.map.SoakResourceKeyMap;
 import org.soak.map.item.SoakItemStackMap;
+import org.soak.wrapper.inventory.meta.AbstractItemMeta;
 import org.spongepowered.api.data.Keys;
 import org.spongepowered.api.registry.RegistryTypes;
 import org.spongepowered.api.tag.ItemTypeTags;
@@ -111,7 +112,6 @@ public class SoakItemTypeTyped<T extends ItemMeta> implements ItemType.Typed<T> 
     @Override
     public @NotNull Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(@NotNull EquipmentSlot equipmentSlot) {
         throw NotImplementedException.createByLazy(ItemType.class, "getDefaultAttributeModifiers", EquipmentSlot.class);
-
     }
 
     @Override
@@ -156,14 +156,16 @@ public class SoakItemTypeTyped<T extends ItemMeta> implements ItemType.Typed<T> 
 
     @Override
     public @NotNull ItemStack createItemStack(int i, @Nullable Consumer<? super T> consumer) {
-        var stack = new ItemStack(Material.AIR, i).withType(this.asMaterial());
-        var spongeStack = SoakItemStackMap.toSponge(stack);
+        var spongeStack = org.spongepowered.api.item.inventory.ItemStack.of(this.type, i);
+        AbstractItemMeta meta;
         try {
-            SoakItemStackMap.toBukkitMeta(spongeStack, this.metaClass);
+            meta = SoakItemStackMap.toBukkitMeta(spongeStack, this.metaClass);
         } catch (NoSuchMethodException | InvocationTargetException | InstantiationException |
                  IllegalAccessException e) {
             throw new RuntimeException(e);
         }
+        var stack = new SoakItemStack(meta);
+
         if (consumer != null) {
             consumer.accept((T) stack.getItemMeta());
         }

@@ -5,7 +5,9 @@ import io.papermc.paper.inventory.tooltip.TooltipContext;
 import io.papermc.paper.persistence.PersistentDataContainerView;
 import io.papermc.paper.registry.set.RegistryKeySet;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TranslatableComponent;
 import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.LivingEntity;
@@ -18,7 +20,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
 import org.jetbrains.annotations.Unmodifiable;
+import org.mose.collection.stream.builder.CollectionStreamBuilder;
+import org.mose.collection.stream.specific.list.ListStream;
+import org.soak.exception.NotImplementedException;
 import org.soak.map.item.SoakItemStackMap;
+import org.soak.utils.ListMappingUtils;
 import org.soak.wrapper.inventory.meta.AbstractItemMeta;
 import org.soak.wrapper.inventory.meta.SoakItemMeta;
 import org.spongepowered.api.item.inventory.ItemStackSnapshot;
@@ -32,12 +38,35 @@ import java.util.function.UnaryOperator;
 
 public class SoakItemStack extends ItemStack {
 
+    private @NotNull AbstractItemMeta meta;
+
     public SoakItemStack() {
         this(new SoakItemMeta(ItemStackSnapshot.empty()));
     }
 
-    public SoakItemStack(ItemMeta meta) {
-        setItemMeta(meta);
+    public SoakItemStack(@NotNull AbstractItemMeta meta) {
+        this.meta = meta;
+    }
+
+    @Override
+    public boolean hasItemMeta() {
+        return true;
+    }
+
+    @Override
+    public boolean setItemMeta(@Nullable ItemMeta itemMeta) {
+        if (itemMeta == null) {
+            var currentStack = this.meta.sponge();
+            var newSpongeStack = org.spongepowered.api.item.inventory.ItemStack.of(currentStack.type(), currentStack.quantity());
+            this.meta = SoakItemStackMap.toBukkitMeta(newSpongeStack);
+            return true;
+        }
+        if (!(itemMeta instanceof AbstractItemMeta)) {
+            throw new IllegalArgumentException("itemMeta must be AbstractItemMeta");
+        }
+        //TODO check type of meta is applicable to itemtype
+        this.meta = (AbstractItemMeta) itemMeta;
+        return true;
     }
 
     @Override
@@ -52,18 +81,24 @@ public class SoakItemStack extends ItemStack {
 
     @Override
     public void setType(@NotNull Material type) {
-withType(type);
-    }
-
-    @Override
-    public @NotNull ItemStack withType(@NotNull Material type) {
         var currentMeta = getItemMeta();
         var itemType = SoakItemStackMap.toSponge(type).orElseThrow(() -> new RuntimeException("material is not item"));
         var itemStack = org.spongepowered.api.item.inventory.ItemStack.of(itemType, currentMeta.quantity());
         var newMeta = SoakItemStackMap.toBukkitMeta(itemStack);
         currentMeta.copyInto(newMeta);
         setItemMeta(newMeta);
-        return this;
+    }
+
+    @Override
+    public @NotNull ItemStack withType(@NotNull Material type) {
+        var copy = this.clone();
+        var currentMeta = getItemMeta();
+        var itemType = SoakItemStackMap.toSponge(type).orElseThrow(() -> new RuntimeException("material is not item"));
+        var itemStack = org.spongepowered.api.item.inventory.ItemStack.of(itemType, currentMeta.quantity());
+        var newMeta = SoakItemStackMap.toBukkitMeta(itemStack);
+        currentMeta.copyInto(newMeta);
+        copy.setItemMeta(newMeta);
+        return copy;
     }
 
     @Override
@@ -78,202 +113,247 @@ withType(type);
 
     @Override
     public @Nullable MaterialData getData() {
-        return super.getData();
+        throw NotImplementedException.createByLazy(ItemStack.class, "getData");
     }
 
     @Override
     public void setData(@Nullable MaterialData data) {
-        super.setData(data);
+        throw NotImplementedException.createByLazy(ItemStack.class, "setData", MaterialData.class);
     }
 
     @Override
     public short getDurability() {
-        return super.getDurability();
+        return (short) getItemMeta().durability();
     }
 
     @Override
     public void setDurability(short durability) {
-        super.setDurability(durability);
+        getItemMeta().setDurability(durability);
     }
 
     @Override
     public int getMaxStackSize() {
-        return super.getMaxStackSize();
-    }
-
-    @Override
-    public String toString() {
-        return super.toString();
+        return getItemMeta().getMaxStackSize();
     }
 
     @Override
     public boolean equals(Object obj) {
-        return super.equals(obj);
+        if (!(obj instanceof ItemStack compareStack)) {
+            return false;
+        }
+        if (!compareStack.hasItemMeta()) {
+            return false;
+        }
+        var compareMeta = compareStack.getItemMeta();
+        var meta = this.getItemMeta();
+        return compareMeta.equals(meta);
+
     }
 
     @Override
     public boolean isSimilar(@Nullable ItemStack stack) {
-        return super.isSimilar(stack);
+        if (stack == null) {
+            return false;
+        }
+        if (!stack.hasItemMeta()) {
+            return false;
+        }
+        return this.getItemMeta().equalsIgnoreQuantity(stack.getItemMeta());
     }
 
     @Override
     public @NotNull ItemStack clone() {
-        return super.clone();
+        var meta = this.getItemMeta().clone();
+        return new SoakItemStack(meta);
     }
 
     @Override
     public int hashCode() {
-        return super.hashCode();
+        return getItemMeta().sponge().hashCode();
     }
 
     @Override
     public boolean containsEnchantment(@NotNull Enchantment ench) {
-        return super.containsEnchantment(ench);
+        throw NotImplementedException.createByLazy(ItemStack.class, "containsEnchantment", Enchantment.class);
     }
 
     @Override
     public int getEnchantmentLevel(@NotNull Enchantment ench) {
-        return super.getEnchantmentLevel(ench);
+        throw NotImplementedException.createByLazy(ItemStack.class, "getEnchantmentLevel", Enchantment.class);
+
     }
 
     @Override
     public @NotNull Map<Enchantment, Integer> getEnchantments() {
-        return super.getEnchantments();
+        throw NotImplementedException.createByLazy(ItemStack.class, "getEnchantments");
+
     }
 
     @Override
     public void addEnchantments(@NotNull Map<Enchantment, Integer> enchantments) {
-        super.addEnchantments(enchantments);
+        throw NotImplementedException.createByLazy(ItemStack.class, "addEnchantments", Map.class);
+
     }
 
     @Override
     public void addEnchantment(@NotNull Enchantment ench, int level) {
-        super.addEnchantment(ench, level);
+        throw NotImplementedException.createByLazy(ItemStack.class, "addEnchantment", Enchantment.class, int.class);
+
     }
 
     @Override
     public void addUnsafeEnchantments(@NotNull Map<Enchantment, Integer> enchantments) {
-        super.addUnsafeEnchantments(enchantments);
+        throw NotImplementedException.createByLazy(ItemStack.class, "addUnsafeEnchantments", Map.class);
+
     }
 
     @Override
     public void addUnsafeEnchantment(@NotNull Enchantment ench, int level) {
-        super.addUnsafeEnchantment(ench, level);
+        throw NotImplementedException.createByLazy(ItemStack.class, "addUnsafeEnchantment", Enchantment.class, int.class);
+
     }
 
     @Override
     public int removeEnchantment(@NotNull Enchantment ench) {
-        return super.removeEnchantment(ench);
+        throw NotImplementedException.createByLazy(ItemStack.class, "removeEnchantment", Enchantment.class);
+
     }
 
     @Override
     public void removeEnchantments() {
-        super.removeEnchantments();
+        throw NotImplementedException.createByLazy(ItemStack.class, "removeEnchantments");
+
     }
 
     @Override
     public @NotNull Map<String, Object> serialize() {
-        return super.serialize();
+        throw NotImplementedException.createByLazy(ItemStack.class, "serialize");
     }
 
     @Override
     public boolean editMeta(@NotNull Consumer<? super ItemMeta> consumer) {
-        return super.editMeta(consumer);
+        consumer.accept(this.getItemMeta());
+        return true;
     }
 
     @Override
     public <M extends ItemMeta> boolean editMeta(@NotNull Class<M> metaClass, @NotNull Consumer<? super M> consumer) {
-        return super.editMeta(metaClass, consumer);
+        var meta = getItemMeta();
+        if (!metaClass.isInstance(meta)) {
+            return false;
+        }
+        consumer.accept((M) meta);
+        return true;
     }
 
     @Override
     public AbstractItemMeta getItemMeta() {
-        return (AbstractItemMeta) super.getItemMeta();
+        return this.meta;
     }
 
     @Override
     public @NotNull String getTranslationKey() {
-        return super.getTranslationKey();
+        var component = getItemMeta().sponge().asComponent();
+        if (!(component instanceof TranslatableComponent trans)) {
+            throw new IllegalStateException("ItemStack does not have translation key");
+        }
+        return trans.key();
     }
 
     @Override
     public @NotNull ItemStack enchantWithLevels(@Range(from = 1L, to = 30L) int levels, boolean allowTreasure, @NotNull Random random) {
-        return super.enchantWithLevels(levels, allowTreasure, random);
+        throw NotImplementedException.createByLazy(ItemStack.class, "enchantWithLevels", int.class, boolean.class, Random.class);
     }
 
     @Override
     public @NotNull ItemStack enchantWithLevels(@Range(from = 1L, to = 30L) int levels, @NotNull RegistryKeySet<@NotNull Enchantment> keySet, @NotNull Random random) {
-        return super.enchantWithLevels(levels, keySet, random);
+        throw NotImplementedException.createByLazy(ItemStack.class, "enchantWithLevels", int.class, RegistryKeySet.class, Random.class);
+
     }
 
     @Override
     public @NotNull HoverEvent<HoverEvent.ShowItem> asHoverEvent(@NotNull UnaryOperator<HoverEvent.ShowItem> op) {
-        return super.asHoverEvent(op);
+        throw NotImplementedException.createByLazy(ItemStack.class, "asHoverEvent", UnaryOperator.class);
     }
 
     @Override
     public @NotNull Component displayName() {
-        return super.displayName();
+        return this.getItemMeta().sponge().asComponent();
     }
 
     @Override
     public @NotNull ItemStack ensureServerConversions() {
-        return super.ensureServerConversions();
+        throw NotImplementedException.createByLazy(ItemStack.class, "ensureServerConversions");
     }
 
     @Override
     public @NotNull byte[] serializeAsBytes() {
-        return super.serializeAsBytes();
+        throw NotImplementedException.createByLazy(ItemStack.class, "serializeAsBytes");
     }
 
     @Override
     public @Nullable String getI18NDisplayName() {
-        return super.getI18NDisplayName();
+        throw NotImplementedException.createByLazy(ItemStack.class, "getI18NDisplayName");
     }
 
     @Override
     public int getMaxItemUseDuration() {
-        return super.getMaxItemUseDuration();
+        return getItemMeta().maxDurability();
     }
 
     @Override
     public int getMaxItemUseDuration(@NotNull LivingEntity entity) {
-        return super.getMaxItemUseDuration(entity);
+        throw NotImplementedException.createByLazy(ItemStack.class, "getMaxItemUseDuration", LivingEntity.class);
     }
 
     @Override
     public @NotNull ItemStack asOne() {
-        return super.asOne();
+        return asQuantity(1);
     }
 
     @Override
     public @NotNull ItemStack asQuantity(int qty) {
-        return super.asQuantity(qty);
+        var copy = clone();
+        copy.setAmount(qty);
+        return copy;
     }
 
     @Override
     public @NotNull ItemStack add() {
-        return super.add();
+        return super.add(1);
     }
 
     @Override
     public @NotNull ItemStack add(int qty) {
-        return super.add(qty);
+        setAmount(getAmount() + qty);
+        return this;
     }
 
     @Override
     public @NotNull ItemStack subtract() {
-        return super.subtract();
+        return subtract(1);
     }
 
     @Override
     public @NotNull ItemStack subtract(int qty) {
-        return super.subtract(qty);
+        var newQuantity = getAmount() - qty;
+        newQuantity = Math.max(newQuantity, 0);
+        setAmount(newQuantity);
+        return this;
     }
 
     @Override
     public @Nullable List<String> getLore() {
-        return super.getLore();
+        var lore = lore();
+        if (lore == null) {
+            return null;
+        }
+
+        return ListMappingUtils.direct(
+                lore,
+                component -> LegacyComponentSerializer.legacyAmpersand().serialize(component),
+                legacy -> LegacyComponentSerializer.legacySection().deserialize(legacy),
+                true);
     }
 
     @Override

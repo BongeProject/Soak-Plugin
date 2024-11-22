@@ -61,6 +61,18 @@ public abstract class AbstractItemMeta implements ItemMeta, Damageable {
         return this.container;
     }
 
+    public int durability() {
+        return this.container.get(Keys.ITEM_DURABILITY).orElse(0);
+    }
+
+    public void setDurability(int durability) {
+        set(Keys.ITEM_DURABILITY, durability);
+    }
+
+    public int maxDurability() {
+        return this.container.get(Keys.MAX_DURABILITY).orElse(0);
+    }
+
     public int quantity() {
         return container.quantity();
     }
@@ -81,7 +93,7 @@ public abstract class AbstractItemMeta implements ItemMeta, Damageable {
     }
 
     public ItemStack asStack() {
-        return this.container.asMutable();
+        return this.container.asMutableCopy();
     }
 
     public ItemStackSnapshot asSnapshot() {
@@ -754,5 +766,27 @@ public abstract class AbstractItemMeta implements ItemMeta, Damageable {
     @Override
     public @NotNull String getAsComponentString() {
         throw NotImplementedException.createByLazy(ItemMeta.class, "getAsComponentString");
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof AbstractItemMeta compareMeta)) {
+            return false;
+        }
+        var compareStack = compareMeta.asStack();
+        var stack = this.asStack();
+        return compareStack.equalTo(stack);
+    }
+
+    public boolean equalsIgnoreQuantity(@Nullable Object object) {
+        if (!(object instanceof AbstractItemMeta compareMeta)) {
+            return false;
+        }
+        var compareStack = compareMeta.asStack();
+        var stack = this.asStack();
+
+        compareStack.setQuantity(1);
+        stack.setQuantity(1);
+        return compareStack.equalTo(stack);
     }
 }

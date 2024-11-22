@@ -3,7 +3,7 @@ package org.soak.map;
 import org.bukkit.util.BoundingBox;
 import org.spongepowered.api.util.AABB;
 
-public class SoakBoundingBox {
+public class SoakBoundingBoxMap {
 
     public static AABB toSponge(BoundingBox box) {
         var min = box.getMin();

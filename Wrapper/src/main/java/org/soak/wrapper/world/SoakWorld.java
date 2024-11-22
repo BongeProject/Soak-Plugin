@@ -36,7 +36,6 @@ import org.soak.utils.single.SoakSingleInstance;
 import org.soak.wrapper.SoakWorldBorder;
 import org.soak.wrapper.block.SoakBlock;
 import org.soak.wrapper.entity.AbstractEntity;
-import org.soak.wrapper.entity.SoakEntity;
 import org.soak.wrapper.entity.SoakLightningStrike;
 import org.soak.wrapper.entity.living.human.SoakPlayer;
 import org.soak.wrapper.world.chunk.AbstractSoakChunk;
@@ -294,8 +293,10 @@ public class SoakWorld implements World, SoakSingleInstance<org.spongepowered.ap
 
     @Override
     public @NotNull Collection<Entity> getNearbyEntities(@NotNull BoundingBox boundingBox, @Nullable Predicate<? super Entity> predicate) {
-        throw NotImplementedException.createByLazy(World.class, "getNearbyEntities", BoundingBox.class, Predicate.class);
-
+        var spongeBoundingBox = SoakBoundingBoxMap.toSponge(boundingBox);
+        Predicate<org.spongepowered.api.entity.Entity> spongePredicate = (entity) -> predicate == null || predicate.test(AbstractEntity.wrapEntity(entity));
+        var spongeCollection = this.sponge().entities(spongeBoundingBox, spongePredicate);
+        return CollectionStreamBuilder.builder().collection(spongeCollection).basicMap(entity -> (Entity)AbstractEntity.wrapEntity(entity)).buildSet();
     }
 
     @Override

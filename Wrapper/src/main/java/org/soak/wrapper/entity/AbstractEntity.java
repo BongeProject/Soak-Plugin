@@ -43,6 +43,7 @@ import org.spongepowered.api.entity.living.Living;
 import org.spongepowered.api.entity.living.player.server.ServerPlayer;
 import org.spongepowered.api.entity.projectile.explosive.FireworkRocket;
 import org.spongepowered.api.entity.weather.LightningBolt;
+import org.spongepowered.api.registry.RegistryTypes;
 import org.spongepowered.api.service.permission.Subject;
 import org.spongepowered.api.util.AABB;
 import org.spongepowered.api.util.Direction;
@@ -76,6 +77,7 @@ public abstract class AbstractEntity<E extends org.spongepowered.api.entity.Enti
         if (entity instanceof LightningBolt bolt) {
             return new SoakLightningStrike(bolt);
         }
+        SoakManager.getManager().getLogger().warn("No mapping for: " + entity.type().key(RegistryTypes.ENTITY_TYPE).asString());
         return new SoakEntity<>(Sponge.systemSubject(), Sponge.systemSubject(), entity);
     }
 

@@ -24,6 +24,7 @@ import org.spongepowered.api.data.Keys;
 import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.registry.RegistryTypes;
 import org.spongepowered.api.state.StateContainer;
+import org.spongepowered.api.tag.ItemTypeTags;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -80,13 +81,15 @@ public class MaterialList {
         classCreator = buildGetTranslationKeyMethod(classCreator);
         classCreator = buildGetCompostChanceMethod(classCreator);
         classCreator = buildIsLegacy(classCreator);
+        classCreator = buildIsAir(classCreator);
+        classCreator = buildIsBlock(classCreator);
 
         classCreator = buildStaticMatchMaterial(classCreator);
         return classCreator.make();
 
     }
 
-     static String toName(ResourceKey key) {
+    static String toName(ResourceKey key) {
         var prefix = key.namespace().equals(ResourceKey.MINECRAFT_NAMESPACE) ? "" : toEnumName(key.namespace() + "_");
         return prefix + toEnumName(key.value());
     }
@@ -166,10 +169,17 @@ public class MaterialList {
         return callMethod(builder, "isLegacy", boolean.class);
     }
 
+    private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> buildIsAir(DynamicType.Builder<? extends Enum<?>> builder) throws NoSuchMethodException {
+        return callMethod(builder, "isAir", boolean.class);
+    }
+
+    private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> buildIsBlock(DynamicType.Builder<? extends Enum<?>> builder) throws NoSuchMethodException {
+        return callMethod(builder, "isBlock", boolean.class);
+    }
+
     private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> buildStaticMatchMaterial(DynamicType.Builder<? extends Enum<?>> builder) throws NoSuchMethodException {
         return callStaticMethodReturnSelf(builder, "matchMaterial", MethodCall::withAllArguments, String.class);
     }
-
 
     private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> callMethod(DynamicType.Builder<? extends Enum<?>> builder, String method, Class<?> returnType, Class<?>... arguments) throws NoSuchMethodException {
         return callMethod(builder, method, returnType, extra -> extra, arguments);
@@ -247,6 +257,14 @@ public class MaterialList {
 
     public static boolean isLegacy(Enum<?> enumEntry) {
         return enumEntry.name().startsWith("LEGACY_");
+    }
+
+    public static boolean isAir(Enum<?> enumEntry) {
+        return getItemType(enumEntry).map(type -> type.equals(ItemTypes.AIR.get())).orElse(false);
+    }
+
+    public static boolean isBlock(Enum<?> enumEntry) {
+        return getBlockType(enumEntry).isPresent();
     }
 
     public static float getCompostChance(Enum<?> enumEntry) {
