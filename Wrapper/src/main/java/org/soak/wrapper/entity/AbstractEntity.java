@@ -31,6 +31,7 @@ import org.soak.utils.GeneralHelper;
 import org.soak.utils.ListMappingUtils;
 import org.soak.wrapper.command.SoakCommandSender;
 import org.soak.wrapper.entity.living.AbstractLivingEntity;
+import org.soak.wrapper.entity.living.animal.sheep.SoakSheep;
 import org.soak.wrapper.entity.projectile.SoakFirework;
 import org.soak.wrapper.persistence.SoakMutablePersistentDataContainer;
 import org.soak.wrapper.world.SoakWorld;
@@ -40,6 +41,7 @@ import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.data.Keys;
 import org.spongepowered.api.data.value.Value;
 import org.spongepowered.api.entity.living.Living;
+import org.spongepowered.api.entity.living.animal.Sheep;
 import org.spongepowered.api.entity.living.player.server.ServerPlayer;
 import org.spongepowered.api.entity.projectile.explosive.FireworkRocket;
 import org.spongepowered.api.entity.weather.LightningBolt;
@@ -76,6 +78,9 @@ public abstract class AbstractEntity<E extends org.spongepowered.api.entity.Enti
         }
         if (entity instanceof LightningBolt bolt) {
             return new SoakLightningStrike(bolt);
+        }
+        if (entity instanceof Sheep) {
+            return new SoakSheep((Sheep) entity);
         }
         SoakManager.getManager().getLogger().warn("No mapping for: " + entity.type().key(RegistryTypes.ENTITY_TYPE).asString());
         return new SoakEntity<>(Sponge.systemSubject(), Sponge.systemSubject(), entity);

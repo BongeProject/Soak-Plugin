@@ -15,11 +15,7 @@ import org.soak.exception.NotImplementedException;
 import org.soak.map.item.inventory.SoakEquipmentMap;
 import org.spongepowered.api.data.Keys;
 import org.spongepowered.api.data.type.HandPreferences;
-import org.spongepowered.api.entity.ai.goal.GoalExecutorType;
-import org.spongepowered.api.entity.ai.goal.GoalExecutorTypes;
-import org.spongepowered.api.entity.ai.goal.GoalTypes;
 import org.spongepowered.api.entity.living.Agent;
-import org.spongepowered.api.item.inventory.equipment.EquipmentType;
 import org.spongepowered.api.service.permission.Subject;
 import org.spongepowered.math.vector.Vector3d;
 
