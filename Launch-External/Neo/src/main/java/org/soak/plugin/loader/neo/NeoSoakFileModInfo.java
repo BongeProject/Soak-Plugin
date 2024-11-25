@@ -1,4 +1,4 @@
-package org.soak.plugin.loader.forge;
+package org.soak.plugin.loader.neo;
 
 import net.minecraftforge.forgespi.language.IConfigurable;
 import net.minecraftforge.forgespi.language.IModFileInfo;
@@ -10,9 +10,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-public class SoakFileModInfo implements IModFileInfo {
+public class NeoSoakFileModInfo implements IModFileInfo {
 
-    public static final SoakFileModInfo MOD_INFO = new SoakFileModInfo();
+    public static final NeoSoakFileModInfo MOD_INFO = new NeoSoakFileModInfo();
 
     private final List<IModInfo> soakPluginsCache = new LinkedList<>();
 
@@ -26,7 +26,7 @@ public class SoakFileModInfo implements IModFileInfo {
         return Collections.emptyList();
     }
 
-    public void addMod(SoakModInfo info) {
+    public void addMod(NeoSoakModInfo info) {
         this.soakPluginsCache.add(info);
     }
 

@@ -1,4 +1,4 @@
-package org.soak.plugin.loader.forge;
+package org.soak.plugin.loader.neo;
 
 import net.minecraftforge.forgespi.language.IConfigurable;
 import net.minecraftforge.forgespi.language.IModFileInfo;
@@ -13,17 +13,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public class SoakModInfo implements IModInfo {
+public class NeoSoakModInfo implements IModInfo {
 
     private final SoakPluginContainer metadata;
 
-    public SoakModInfo(SoakPluginContainer metadata) {
+    public NeoSoakModInfo(SoakPluginContainer metadata) {
         this.metadata = metadata;
     }
 
     @Override
     public IModFileInfo getOwningFile() {
-        return SoakFileModInfo.MOD_INFO;
+        return NeoSoakFileModInfo.MOD_INFO;
     }
 
     @Override

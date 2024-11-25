@@ -1,4 +1,4 @@
-package org.soak.plugin.loader.forge;
+package org.soak.plugin.loader.neo;
 
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModLoadingStage;
@@ -12,12 +12,12 @@ import org.spongepowered.plugin.metadata.PluginMetadata;
 import java.net.URI;
 import java.util.Optional;
 
-public class SoakModContainer extends ModContainer implements SoakPluginContainer {
+public class NeoSoakModContainer extends ModContainer implements SoakPluginContainer {
 
     private final SoakPluginContainer container;
 
-    SoakModContainer(SoakPluginContainer container) {
-        super(new SoakModInfo(container));
+    NeoSoakModContainer(SoakPluginContainer container) {
+        super(new NeoSoakModInfo(container));
         this.contextExtension = () -> null; //gets the language config
         this.modLoadingStage = ModLoadingStage.COMMON_SETUP;
         this.container = container;

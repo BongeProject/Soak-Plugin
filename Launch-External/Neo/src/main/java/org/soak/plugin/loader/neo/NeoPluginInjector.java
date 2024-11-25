@@ -1,21 +1,21 @@
-package org.soak.plugin.loader.forge;
+package org.soak.plugin.loader.neo;
 
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModList;
+import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
 import net.minecraftforge.forgespi.language.ModFileScanData;
+import org.soak.plugin.SoakPlugin;
 import org.soak.plugin.SoakPluginContainer;
 import org.soak.plugin.loader.common.SoakPluginInjector;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
-public class ForgePluginInjector implements SoakPluginInjector {
+public class NeoPluginInjector implements SoakPluginInjector {
 
-
-    //this is most likely broken
-    public static void injectPluginToPlatform(SoakPluginContainer container) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException, ClassNotFoundException, NoSuchFieldException, InstantiationException {
-        var modContainer = new SoakModContainer(container);
-        var modFileInfo = SoakFileModInfo.MOD_INFO;
+    public static void injectPluginToPlatform(SoakPluginContainer container) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException, NoSuchFieldException {
+        var modContainer = new NeoSoakModContainer(container);
+        var modFileInfo = NeoSoakFileModInfo.MOD_INFO;
         var pluginFileScanData = new ModFileScanData();
         pluginFileScanData.addModFileInfo(modFileInfo);
 
@@ -27,14 +27,4 @@ public class ForgePluginInjector implements SoakPluginInjector {
         mods.add(modContainer);
         modsField.set(modListAccessor, mods);
     }
-
-    public static void removePluginFromPlatform(String id) {
-//TODO
-    }
-
-    public static void removePluginFromPlatform(SoakPluginContainer container) {
-//TODO
-    }
-
-
 }

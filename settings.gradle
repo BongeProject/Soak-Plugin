@@ -19,4 +19,6 @@ include 'Launch-External'
 include 'Gradle-Annotations'
 include 'Common'
 include 'Override'
+include 'Launch-External:Neo'
+findProject(':Launch-External:Neo')?.name = 'Neo'
 

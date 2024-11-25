@@ -1,10 +1,10 @@
 package org.soak.plugin.loader.common;
 
 import org.soak.plugin.SoakPluginContainer;
-import org.soak.plugin.loader.forge.ForgePluginInjector;
 import org.soak.plugin.loader.vanilla.VanillaPluginInjector;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 public interface SoakPluginInjector {
 
@@ -12,9 +12,9 @@ public interface SoakPluginInjector {
         try {
             VanillaPluginInjector.injectPluginToPlatform(container);
         } catch (NoSuchMethodException e) {
-            //load forge
+            //load neo forge
             try {
-                ForgePluginInjector.injectPluginToPlatform(container);
+                injectPluginToPlatform("org.soak.plugin.loader.neo.NeoPluginInjector", container);
             } catch (Throwable ex) {
                 throw new RuntimeException(ex);
             }
@@ -23,16 +23,15 @@ public interface SoakPluginInjector {
         }
     }
 
+    private static void injectPluginToPlatform(String className, SoakPluginContainer container) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        var method = Class.forName(className).getDeclaredMethod("injectPluginToPlatform", SoakPluginContainer.class);
+        method.invoke(null, container);
+    }
+
     static void removePluginFromPlatform(String id) {
         try {
             VanillaPluginInjector.removePluginFromPlatform(id);
-        } catch (NoSuchFieldException e) {
-            try {
-                ForgePluginInjector.removePluginFromPlatform(id);
-            } catch (Throwable ex) {
-                throw new RuntimeException(ex);
-            }
-        } catch (IllegalAccessException e) {
+        } catch (IllegalAccessException | NoSuchFieldException e) {
             throw new RuntimeException(e);
         }
     }
@@ -40,13 +39,7 @@ public interface SoakPluginInjector {
     static void removePluginFromPlatform(SoakPluginContainer container) {
         try {
             VanillaPluginInjector.removePluginFromPlatform(container);
-        } catch (NoSuchFieldException e) {
-            try {
-                ForgePluginInjector.removePluginFromPlatform(container);
-            } catch (Throwable ex) {
-                throw new RuntimeException(ex);
-            }
-        } catch (IllegalAccessException e) {
+        } catch (IllegalAccessException | NoSuchFieldException e) {
             throw new RuntimeException(e);
         }
     }

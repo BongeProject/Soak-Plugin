@@ -29,8 +29,8 @@ dependencies {
 
     implementation 'org.spongepowered:spongeapi:' + property("SPONGE_VERSION")
 
-    implementation 'net.minecraftforge:fmlcore:1.19.4-45.2.8'
-    implementation 'net.minecraftforge:forgespi:6.0.0'
+    //implementation 'net.minecraftforge:fmlcore:1.19.4-45.2.8'
+    //implementation 'net.minecraftforge:forgespi:6.0.0'
     //implementation 'commons-lang:commons-lang:2.6' //included with bukkit -> forced onto forge
 
     implementation 'io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT'
