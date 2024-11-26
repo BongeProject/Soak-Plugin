@@ -32,7 +32,7 @@ public class SoakCommandMap extends SimpleCommandMap {
 
         var rawRegister = Sponge.server().commandManager().registrar(org.spongepowered.api.command.Command.Raw.class).orElseThrow(() -> new RuntimeException("Cannot register late command of '" + label + "'"));
         var plugin = GeneralHelper.fromStackTrace();
-        var soakPlugin = SoakManager.getManager().getContainer(plugin).orElseThrow(() -> new RuntimeException("Cannot get the soakPlugin from '" + plugin.metadata().id() + "'"));
+        var soakPlugin = SoakManager.getManager().getSoakContainer(plugin).orElseThrow(() -> new RuntimeException("Cannot get the soakPlugin from '" + plugin.metadata().id() + "'"));
         var bukkitRawWrapper = new BukkitRawCommand(soakPlugin, command);
         rawRegister.register(plugin, bukkitRawWrapper, command.getName(), command.getAliases().toArray(String[]::new));
         return result;

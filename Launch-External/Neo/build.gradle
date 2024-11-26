@@ -23,13 +23,12 @@ java {
 }
 
 dependencies {
-    implementation project(":Launch-External")
     implementation project(":Common")
     implementation 'org.spongepowered:spongeapi:' + property("SPONGE_VERSION")
     implementation 'io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT'
 
-    implementation "net.neoforged:fmlloader:1.20.1-47.1.7"
-    implementation "net.neoforged:fmlcore:1.20.1-47.1.7"
+    implementation "net.neoforged.fancymodloader:loader:5.0.6"
+    implementation "cpw.mods:securejarhandler:3.0.7"
 
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'

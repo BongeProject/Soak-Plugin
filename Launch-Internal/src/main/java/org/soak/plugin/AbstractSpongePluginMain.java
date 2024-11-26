@@ -6,6 +6,7 @@ import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.command.PluginCommandYamlParser;
 import org.bukkit.plugin.InvalidDescriptionException;
 import org.bukkit.plugin.Plugin;
@@ -202,8 +203,13 @@ public class AbstractSpongePluginMain implements SoakInternalManager, WrapperMan
     }
 
     @Override
-    public Stream<SoakPluginContainer> getBukkitContainers() {
+    public Stream<SoakPluginContainer> getBukkitSoakContainers() {
         return Stream.of(this.soakPluginContainer);
+    }
+
+    @Override
+    public Stream<PluginContainer> getBukkitPluginContainers() {
+        return getBukkitSoakContainers().map(SoakPluginContainer::getTrueContainer);
     }
 
     @Override

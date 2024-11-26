@@ -1,30 +1,38 @@
 package org.soak.plugin.loader.neo;
 
-import net.minecraftforge.fml.ModContainer;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
-import net.minecraftforge.forgespi.language.ModFileScanData;
-import org.soak.plugin.SoakPlugin;
+import net.neoforged.fml.ModList;
+import net.neoforged.fml.loading.moddiscovery.ModFileInfo;
+import org.soak.plugin.SoakManager;
 import org.soak.plugin.SoakPluginContainer;
-import org.soak.plugin.loader.common.SoakPluginInjector;
+import org.soak.plugin.loader.neo.file.NeoSoakModFile;
+import org.soak.plugin.loader.neo.file.NeoSoakModFileInfo;
+import org.soak.utils.Singleton;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
-public class NeoPluginInjector implements SoakPluginInjector {
+public class NeoPluginInjector {
 
-    public static void injectPluginToPlatform(SoakPluginContainer container) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException, NoSuchFieldException {
-        var modContainer = new NeoSoakModContainer(container);
-        var modFileInfo = NeoSoakFileModInfo.MOD_INFO;
-        var pluginFileScanData = new ModFileScanData();
-        pluginFileScanData.addModFileInfo(modFileInfo);
+    public static Singleton<ModFileInfo> SOAK_LOADER_FILE_INFO = new Singleton<>(() -> {
+        var container = SoakManager.getManager().getOwnContainer();
+        return (ModFileInfo) ModList.get().getModFiles().stream().filter(info -> info.getMods().stream().anyMatch(mod -> mod.getModId().equals(container.metadata().id()))).findAny().orElseThrow();
+    });
 
-        var modListAccessor = ModList.get();
+    public static void injectPluginToPlatform(Collection<SoakPluginContainer> containers) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException, NoSuchFieldException {
+        var loader = new NeoSoakModFile(SOAK_LOADER_FILE_INFO.get().getFile().getFilePath(), containers);
+        var modContainers = loader.getModInfos().stream().map(modInfo -> {
+            var soakContainer = containers.stream().filter(container -> container.metadata().id().equals(modInfo.getModId())).findAny().orElseThrow(() -> new RuntimeException("Soak loaded mod '" + modInfo.getModId() + "' but no plugin is attached"));
+            return new NeoSoakModContainer(modInfo, soakContainer);
+        }).toList();
 
-        var modsField = modListAccessor.getClass().getDeclaredField("mods");
-        modsField.setAccessible(true);
-        var mods = (List<ModContainer>) modsField.get(modListAccessor);
-        mods.add(modContainer);
-        modsField.set(modListAccessor, mods);
+        var modList = ModList.get();
+        var modFiles = new ArrayList<>(modList.getSortedMods());
+        modFiles.addAll(modContainers);
+
+        var method = ModList.class.getDeclaredMethod("setLoadedMods", List.class);
+        method.setAccessible(true);
+        method.invoke(modList, modFiles);
     }
 }

@@ -33,17 +33,17 @@ public class GeneralHelper {
                 .filter(className -> !className.startsWith("org.bukkit"))
                 .filter(className -> !className.startsWith("io.papermc"))
                 .filter(className -> !className.startsWith("java.lang"))
-                .map(className -> SoakManager.getManager().getBukkitContainers().map(soakPluginContainer -> {
-                                    var context = soakManager.getServer().getSoakPluginManager().getContext(soakPluginContainer.getBukkitInstance());
-                                    var classLoader = context.loader();
-                                    try {
-                                        Class.forName(className, false, classLoader);
-                                        return soakPluginContainer;
-                                    } catch (ClassNotFoundException e) {
-                                        return null;
-                                    }
-                                })
-                                .filter(Objects::nonNull).findAny()
+                .map(className -> SoakManager.getManager().getBukkitSoakContainers().map(soakPluginContainer -> {
+                            var context = soakManager.getServer().getSoakPluginManager().getContext(soakPluginContainer.getBukkitInstance());
+                            var classLoader = context.loader();
+                            try {
+                                Class.forName(className, false, classLoader);
+                                return soakPluginContainer;
+                            } catch (ClassNotFoundException e) {
+                                return null;
+                            }
+                        })
+                        .filter(Objects::nonNull).findAny()
                 )
                 .filter(Optional::isPresent)
                 .map(Optional::get)

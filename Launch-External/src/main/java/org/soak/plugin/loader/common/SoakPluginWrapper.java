@@ -72,6 +72,9 @@ public class SoakPluginWrapper {
 
     @Listener
     public void onPluginLoad(StartingEngineEvent<Server> event) {
+        if(!SoakPlugin.plugin().didClassesGenerate()){
+            return;
+        }
         var earlyPlugins = SoakPlugin.plugin().config().getLoadingEarlyPlugins();
         if (earlyPlugins.contains(this.pluginContainer.getBukkitInstance().getName())) {
             return;
@@ -89,6 +92,9 @@ public class SoakPluginWrapper {
     //using StartedEngineEvent despite the timing known to be incorrect
     @Listener
     public void onPluginEnable(StartedEngineEvent<Server> event) {
+        if(!SoakPlugin.plugin().didClassesGenerate()){
+            return;
+        }
         var earlyPlugins = SoakPlugin.plugin().config().getLoadingEarlyPlugins();
         if (earlyPlugins.contains(this.pluginContainer.getBukkitInstance().getName())) {
             return;
@@ -103,6 +109,9 @@ public class SoakPluginWrapper {
 
     @Listener
     public void onPluginDisable(StoppingEngineEvent<Server> event) {
+        if(!SoakPlugin.plugin().didClassesGenerate()){
+            return;
+        }
         if (hasRunShutdown) {
             return;
         }

@@ -13,6 +13,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.soak.plugin.SoakManager;
+import org.soak.plugin.SoakPluginContainer;
 import org.soak.plugin.paper.meta.SoakPluginMeta;
 
 import java.io.File;
@@ -123,8 +124,8 @@ public class SoakPluginClassLoader extends URLClassLoader implements ConfiguredP
         var config = this.getConfiguration();
         return SoakManager
                 .getManager()
-                .getBukkitContainers()
-                .map(pc -> pc.getBukkitInstance())
+                .getBukkitSoakContainers()
+                .map(SoakPluginContainer::getBukkitInstance)
                 .filter(jp -> jp.getPluginMeta().equals(config))
                 .findAny()
                 .orElse(null);

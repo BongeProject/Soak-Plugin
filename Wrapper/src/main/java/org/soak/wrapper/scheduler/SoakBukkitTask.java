@@ -26,13 +26,13 @@ public class SoakBukkitTask implements BukkitTask {
     }
 
     public boolean isBukkit() {
-        return SoakManager.getManager().getContainer(this.spongeTask.task().plugin()).isPresent();
+        return SoakManager.getManager().getSoakContainer(this.spongeTask.task().plugin()).isPresent();
     }
 
     @Override
     public @NotNull Plugin getOwner() {
         PluginContainer task = this.spongeTask.task().plugin();
-        return SoakManager.getManager().getContainer(task).orElseThrow(() -> new IllegalStateException("Task is a sponge task")).getBukkitInstance();
+        return SoakManager.getManager().getSoakContainer(task).orElseThrow(() -> new IllegalStateException("Task is a sponge task")).getBukkitInstance();
     }
 
     @Override

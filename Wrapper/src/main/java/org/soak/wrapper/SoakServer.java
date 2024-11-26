@@ -843,7 +843,7 @@ public abstract class SoakServer implements Server {
 
     @Override
     public @Nullable PluginCommand getPluginCommand(@NotNull String name) {
-        PluginCommand pluginCommand = SoakManager.getManager().getBukkitContainers()
+        PluginCommand pluginCommand = SoakManager.getManager().getBukkitSoakContainers()
                 .sorted(Comparator.comparing(pl -> pl.metadata().id()))
                 .flatMap(pl -> SoakManager.<WrapperManager>getManager().getBukkitCommands(pl.getBukkitInstance()).stream())
                 .filter(cmd -> {

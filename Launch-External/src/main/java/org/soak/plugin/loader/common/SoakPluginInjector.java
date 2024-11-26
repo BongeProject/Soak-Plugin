@@ -5,16 +5,19 @@ import org.soak.plugin.loader.vanilla.VanillaPluginInjector;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Collection;
 
 public interface SoakPluginInjector {
 
-    static void injectPlugin(SoakPluginContainer container) {
+    static void injectPlugins(Collection<SoakPluginContainer> containers) {
         try {
-            VanillaPluginInjector.injectPluginToPlatform(container);
+            for (var container : containers) {
+                VanillaPluginInjector.injectPluginToPlatform(container);
+            }
         } catch (NoSuchMethodException e) {
             //load neo forge
             try {
-                injectPluginToPlatform("org.soak.plugin.loader.neo.NeoPluginInjector", container);
+                injectPluginToPlatform("org.soak.plugin.loader.neo.NeoPluginInjector", containers);
             } catch (Throwable ex) {
                 throw new RuntimeException(ex);
             }
@@ -23,16 +26,15 @@ public interface SoakPluginInjector {
         }
     }
 
-    private static void injectPluginToPlatform(String className, SoakPluginContainer container) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        var method = Class.forName(className).getDeclaredMethod("injectPluginToPlatform", SoakPluginContainer.class);
-        method.invoke(null, container);
+    private static void injectPluginToPlatform(String className, Collection<SoakPluginContainer> containers) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        var method = Class.forName(className).getDeclaredMethod("injectPluginToPlatform", Collection.class);
+        method.invoke(null, containers);
     }
 
     static void removePluginFromPlatform(String id) {
         try {
             VanillaPluginInjector.removePluginFromPlatform(id);
         } catch (IllegalAccessException | NoSuchFieldException e) {
-            throw new RuntimeException(e);
         }
     }
 
@@ -40,7 +42,6 @@ public interface SoakPluginInjector {
         try {
             VanillaPluginInjector.removePluginFromPlatform(container);
         } catch (IllegalAccessException | NoSuchFieldException e) {
-            throw new RuntimeException(e);
         }
     }
 

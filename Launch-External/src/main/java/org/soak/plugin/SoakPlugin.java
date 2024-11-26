@@ -2,7 +2,7 @@ package org.soak.plugin;
 
 import com.google.inject.Inject;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
-import net.kyori.adventure.util.Services;
+import net.bytebuddy.jar.asm.MethodTooLargeException;
 import org.apache.logging.log4j.Logger;
 import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.bukkit.Bukkit;
@@ -39,7 +39,6 @@ import org.spongepowered.api.event.Order;
 import org.spongepowered.api.event.lifecycle.*;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.item.inventory.ItemStackSnapshot;
-import org.spongepowered.api.registry.RegistryTypes;
 import org.spongepowered.configurate.ConfigurateException;
 import org.spongepowered.plugin.PluginContainer;
 
@@ -47,10 +46,9 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
-import java.util.ServiceLoader;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.ConsoleHandler;
 import java.util.stream.Stream;
@@ -68,6 +66,8 @@ public class SoakPlugin implements SoakExternalManager, WrapperManager {
     private final ConsoleHandler consoleHandler = new ConsoleHandler();
 
     public final Collection<Class<?>> generatedClasses = new LinkedBlockingQueue<>();
+    private final int generatedClassesCount = 2;
+    private final Collection<SoakPluginContainer> loadedPlugins = new ArrayList<>();
 
     @Inject
     public SoakPlugin(PluginContainer pluginContainer, Logger logger) {
@@ -87,6 +87,7 @@ public class SoakPlugin implements SoakExternalManager, WrapperManager {
 
     @Listener
     private void generateMaterial(RegisterRegistryValueEvent.EngineScoped<Server> event) {
+        String creatingClass = "Material";
         try {
             var classLoader = SoakPlugin.class.getClassLoader();
 
@@ -94,9 +95,12 @@ public class SoakPlugin implements SoakExternalManager, WrapperManager {
             MaterialList.LOADED_CLASS = materialList.load(classLoader, ClassLoadingStrategy.Default.INJECTION).getLoaded();
             generatedClasses.add(MaterialList.LOADED_CLASS);
 
+            creatingClass = "EntityType";
             var entityTypeList = EntityTypeList.createEntityTypeList();
             EntityTypeList.LOADED_CLASS = entityTypeList.load(classLoader, ClassLoadingStrategy.Default.INJECTION).getLoaded();
             generatedClasses.add(EntityTypeList.LOADED_CLASS);
+        } catch (MethodTooLargeException e) {
+            throw new IllegalStateException("This is a problem with Bukkit's design: PaperMC seem to be making a fix with its hardfork: Too many entries in " + creatingClass, e);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -121,8 +125,13 @@ public class SoakPlugin implements SoakExternalManager, WrapperManager {
     }
 
     @Override
-    public Stream<SoakPluginContainer> getBukkitContainers() {
+    public Stream<SoakPluginContainer> getBukkitSoakContainers() {
         return getPlugins();
+    }
+
+    @Override
+    public Stream<PluginContainer> getBukkitPluginContainers() {
+        return getPlugins().map(SoakPluginContainer::getTrueContainer);
     }
 
     @Override
@@ -150,7 +159,7 @@ public class SoakPlugin implements SoakExternalManager, WrapperManager {
 
     @Override
     public Collection<org.bukkit.command.Command> getBukkitCommands(Plugin plugin) {
-        var pluginContainer = getContainer(plugin);
+        var pluginContainer = getSoakContainer(plugin);
         if (!(pluginContainer instanceof AbstractSoakPluginContainer aspc)) {
             throw new IllegalStateException("Plugin expended to be extending AbstractSoakPluginContainer");
         }
@@ -234,6 +243,10 @@ public class SoakPlugin implements SoakExternalManager, WrapperManager {
         thread.start();
     }
 
+    public boolean didClassesGenerate() {
+        return this.generatedClasses.size() == this.generatedClassesCount;
+    }
+
     @Listener
     public void construct(ConstructPluginEvent event) {
         if (ForgeFixCommons.isRequired()) {
@@ -268,19 +281,17 @@ public class SoakPlugin implements SoakExternalManager, WrapperManager {
             }
 
             SoakPluginContainer container = new AbstractSoakPluginContainer(file, plugin);
-            SoakPluginInjector.injectPlugin(container);
+            loadedPlugins.add(container);
             Sponge.eventManager().registerListeners(container, container.instance(), MethodHandles.lookup());
         }
+        SoakPluginInjector.injectPlugins(loadedPlugins);
         this.getPlugins().forEach(container -> ((AbstractSoakPluginContainer) container).instance().onPluginsConstructed());
         Sponge.eventManager().registerListeners(this.container, new HelpMapListener());
     }
 
     public Stream<SoakPluginContainer> getPlugins() {
-        return Sponge.pluginManager()
-                .plugins()
-                .stream()
-                .filter(container -> container instanceof SoakPluginContainer)
-                .map(container -> (SoakPluginContainer) container);
+        return loadedPlugins
+                .stream();
     }
 
     public PluginContainer container() {

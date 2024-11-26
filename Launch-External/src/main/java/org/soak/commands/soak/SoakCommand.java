@@ -59,7 +59,7 @@ public class SoakCommand {
                 .builder()
                 .addChild(createCommandsForCommand(), "commands")
                 .executor(context -> {
-                    var plugins = SoakManager.getManager().getBukkitContainers()
+                    var plugins = SoakManager.getManager().getBukkitSoakContainers()
                             .map(SoakPluginContainer::getBukkitInstance)
                             .sorted(Comparator.comparing(plugin -> ((JavaPlugin) plugin).isEnabled())
                                     .thenComparing(plugin -> ((JavaPlugin) plugin).getName()))
@@ -123,7 +123,7 @@ public class SoakCommand {
     }
 
     public static Command.Parameterized createMaterialItemFind() {
-        var itemParameter = SoakArguments.registry(ItemType.class, "item", ItemTypes::registry);
+        var itemParameter = SoakArguments.registry(ItemType.class, "item", ItemTypes::registry, () -> RegistryTypes.ITEM_TYPE);
         return Command.builder().addParameter(itemParameter).executor(context -> {
             var t = context.requireOne(itemParameter);
             context.sendMessage(Component.text(MaterialList.value(t).name()));
@@ -132,7 +132,7 @@ public class SoakCommand {
     }
 
     public static Command.Parameterized createMaterialBlockFind() {
-        var blockParameter = SoakArguments.registry(BlockType.class, "block", BlockTypes::registry);
+        var blockParameter = SoakArguments.registry(BlockType.class, "block", BlockTypes::registry, () -> RegistryTypes.BLOCK_TYPE);
         return Command.builder().addParameter(blockParameter).executor(context -> {
             var t = context.requireOne(blockParameter);
             context.sendMessage(Component.text(MaterialList.value(t).name()));

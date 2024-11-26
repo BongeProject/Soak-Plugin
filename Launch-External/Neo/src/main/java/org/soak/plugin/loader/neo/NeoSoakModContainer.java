@@ -1,10 +1,12 @@
 package org.soak.plugin.loader.neo;
 
-import net.minecraftforge.fml.ModContainer;
-import net.minecraftforge.fml.ModLoadingStage;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.neoforgespi.language.IModInfo;
 import org.apache.logging.log4j.Logger;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.soak.plugin.SoakPluginContainer;
 import org.spongepowered.plugin.PluginContainer;
 import org.spongepowered.plugin.metadata.PluginMetadata;
@@ -16,10 +18,8 @@ public class NeoSoakModContainer extends ModContainer implements SoakPluginConta
 
     private final SoakPluginContainer container;
 
-    NeoSoakModContainer(SoakPluginContainer container) {
-        super(new NeoSoakModInfo(container));
-        this.contextExtension = () -> null; //gets the language config
-        this.modLoadingStage = ModLoadingStage.COMMON_SETUP;
+    NeoSoakModContainer(IModInfo modFile, SoakPluginContainer container) {
+        super(modFile);
         this.container = container;
     }
 
@@ -54,13 +54,7 @@ public class NeoSoakModContainer extends ModContainer implements SoakPluginConta
     }
 
     @Override
-    public boolean matches(Object o) {
-        System.out.println("Matches: " + o);
-        return false;
-    }
-
-    @Override
-    public Object getMod() {
-        return this.instance();
+    public @Nullable IEventBus getEventBus() {
+        return null;
     }
 }

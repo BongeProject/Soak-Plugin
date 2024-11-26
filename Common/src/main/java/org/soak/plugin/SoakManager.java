@@ -35,7 +35,9 @@ public interface SoakManager {
 
     Collection<Class<?>> generatedClasses();
 
-    Stream<SoakPluginContainer> getBukkitContainers();
+    Stream<SoakPluginContainer> getBukkitSoakContainers();
+
+    Stream<PluginContainer> getBukkitPluginContainers();
 
     PluginContainer getOwnContainer();
 
@@ -45,12 +47,12 @@ public interface SoakManager {
 
     ArtifactVersion getVersion();
 
-    default SoakPluginContainer getContainer(Plugin plugin) {
-        return getBukkitContainers().filter(pc -> pc.getBukkitInstance().equals(plugin)).findAny().orElseThrow(() -> new RuntimeException("A plugin instance was created for " + plugin.getName() + " but no container could be found"));
+    default SoakPluginContainer getSoakContainer(Plugin plugin) {
+        return getBukkitSoakContainers().filter(pc -> pc.getBukkitInstance().equals(plugin)).findAny().orElseThrow(() -> new RuntimeException("A plugin instance was created for " + plugin.getName() + " but no container could be found"));
     }
 
-    default Optional<SoakPluginContainer> getContainer(PluginContainer plugin) {
-        return getBukkitContainers().filter(pc -> pc.equals(plugin) || pc.getTrueContainer().equals(plugin)).findAny();
+    default Optional<SoakPluginContainer> getSoakContainer(PluginContainer plugin) {
+        return getBukkitSoakContainers().filter(pc -> pc.equals(plugin) || pc.getTrueContainer().equals(plugin)).findAny();
     }
 
     default void displayError(Throwable e, File pluginFile) {

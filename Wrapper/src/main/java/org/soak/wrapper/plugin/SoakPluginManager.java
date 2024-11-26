@@ -107,7 +107,7 @@ public class SoakPluginManager implements org.bukkit.plugin.PluginManager {
 
     @Override
     public boolean isPluginEnabled(@Nullable Plugin plugin) {
-        return SoakManager.getManager().getBukkitContainers()
+        return SoakManager.getManager().getBukkitSoakContainers()
                 .anyMatch(container -> container.getBukkitInstance().equals(plugin));
     }
 
@@ -127,7 +127,7 @@ public class SoakPluginManager implements org.bukkit.plugin.PluginManager {
 
     @Override
     public @NotNull Plugin[] getPlugins() {
-        return SoakManager.getManager().getBukkitContainers()
+        return SoakManager.getManager().getBukkitSoakContainers()
                 .map(SoakPluginContainer::getBukkitInstance)
                 .toArray(Plugin[]::new);
     }
@@ -202,7 +202,7 @@ public class SoakPluginManager implements org.bukkit.plugin.PluginManager {
 
     private void registerEvent(EventSingleListenerWrapper<?> eventWrapper) {
         this.events.add(eventWrapper);
-        SoakPluginContainer pluginContainer = SoakManager.getManager().getContainer(eventWrapper.plugin());
+        SoakPluginContainer pluginContainer = SoakManager.getManager().getSoakContainer(eventWrapper.plugin());
         Class<?>[] soakEventClasses;
         try {
             soakEventClasses = EventClassMapping.soakEventClass(eventWrapper.event());

@@ -47,6 +47,7 @@ jar {
     dependsOn(":MoseStream:jar")
     dependsOn(":CollectionStream:jar")
     dependsOn(":Override:jar")
+    dependsOn(":Launch-External:Neo:jar")
 
     var fat = configurations.runtimeClasspath.filter {
         return it.name.startsWith("Launch-Common")
@@ -70,14 +71,17 @@ jar {
         it.isDirectory() ? it : zipTree(it)
     }
 
-    var folder = project.file("../Override/build/libs/");
-    var files = folder.listFiles();
-    if (files != null && files.length != 0) {
+    var insertFolders = new String[]{"../Override/build/libs/", "./Neo/build/libs/"}
+    for(var folderPath : insertFolders) {
+        var folder = project.file(folderPath);
+        var files = folder.listFiles();
+        if (files != null && files.length != 0) {
 
-        var file = files[0]
-        fat.add(zipTree(file))
-    } else {
-        new RuntimeException("Overrides was not found, this may lead to some compatibility issues").printStackTrace()
+            var file = files[0]
+            fat.add(zipTree(file))
+        } else {
+            new RuntimeException(folder.absolutePath + " was not found, this may lead to some compatibility issues").printStackTrace()
+        }
     }
 
     var excludeList = new String[]{"Material.class"}
