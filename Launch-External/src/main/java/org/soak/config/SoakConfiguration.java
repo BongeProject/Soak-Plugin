@@ -36,6 +36,7 @@ public class SoakConfiguration implements SoakConfig {
             .setComment("Add plugin names to make the plugin load early. This can help some plugins register the required data, but other plugins may break."),
             new StringConfigNode(),
             "compatibility", "run early", "plugins");
+    public static final BooleanConfigNode SHOULD_MATERIALS_LIST_USE_MODDED = new BooleanConfigNode("Hooks", "Bukkit", "Material");
 
     private final File file;
     private final HoconConfigurationLoader loader;
@@ -88,6 +89,10 @@ public class SoakConfiguration implements SoakConfig {
 
     public File pluginFolder() {
         return parse(PLUGIN_FOLDER);
+    }
+
+    public boolean shouldMaterialListUseModded() {
+        return parse(SHOULD_MATERIALS_LIST_USE_MODDED);
     }
 
     public <T> T parse(ConfigNode<T> node) {

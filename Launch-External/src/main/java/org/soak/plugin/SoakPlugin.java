@@ -166,6 +166,11 @@ public class SoakPlugin implements SoakExternalManager, WrapperManager {
         return aspc.instance().commands();
     }
 
+    @Override
+    public boolean shouldMaterialListUseModded() {
+        return this.configuration.shouldMaterialListUseModded();
+    }
+
     @Listener
     public void registerCommands(RegisterCommandEvent<Command.Parameterized> event) {
         event.register(this.container, SoakCommand.createSoakCommand(), "soak");

@@ -37,12 +37,16 @@ public class MaterialList {
     public static Class<? extends Enum<?>> LOADED_CLASS;
 
     public static DynamicType.Unloaded<? extends Enum<?>> createMaterialList() throws Exception {
+        var shouldUseModded = SoakManager.<WrapperManager>getManager().shouldMaterialListUseModded();
         var blockIterator = BlockTypes.registry().stream().iterator();
         var completedItems = new HashSet<org.spongepowered.api.item.ItemType>();
         var materials = new HashSet<String>();
         while (blockIterator.hasNext()) {
             var blockType = blockIterator.next();
             var key = blockType.key(RegistryTypes.BLOCK_TYPE);
+            if (!shouldUseModded && !key.namespace().equals(ResourceKey.MINECRAFT_NAMESPACE)) {
+                continue;
+            }
             var name = toName(key);
             materials.add(name);
 
@@ -63,6 +67,9 @@ public class MaterialList {
                 continue;
             }
             var key = itemType.key(RegistryTypes.ITEM_TYPE);
+            if (!shouldUseModded && !key.namespace().equals(ResourceKey.MINECRAFT_NAMESPACE)) {
+                continue;
+            }
             var name = toName(key);
             materials.add(name);
             ITEM_TYPE_MAP.put(name, itemType);

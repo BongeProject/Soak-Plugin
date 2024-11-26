@@ -241,6 +241,11 @@ public class AbstractSpongePluginMain implements SoakInternalManager, WrapperMan
     }
 
     @Override
+    public boolean shouldMaterialListUseModded() {
+        return false;
+    }
+
+    @Override
     public ConsoleHandler getConsole() {
         return this.consoleHandler;
     }
