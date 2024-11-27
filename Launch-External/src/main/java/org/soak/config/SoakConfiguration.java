@@ -36,7 +36,8 @@ public class SoakConfiguration implements SoakConfig {
             .setComment("Add plugin names to make the plugin load early. This can help some plugins register the required data, but other plugins may break."),
             new StringConfigNode(),
             "compatibility", "run early", "plugins");
-    public static final BooleanConfigNode SHOULD_MATERIALS_LIST_USE_MODDED = new BooleanConfigNode("Hooks", "Bukkit", "Material");
+    public static final ListConfigNode<String> LOAD_LATE = new ListConfigNode<>(new ConfigNodeMeta<List<String>>().setComment("Add plugin names to make the plugin run late. This should be used if you are getting 'NoClassDefFoundError' when the plugin is booting"), new StringConfigNode(), "compatibility", "run late", "plugins");
+    public static final BooleanConfigNode SHOULD_MATERIALS_LIST_USE_MODDED = new BooleanConfigNode(new ConfigNodeMeta<>().setComment("Allows modded blocks to be used with Bukkit plugins. Note: Due to a design flaw in Bukkit, only enable this if your server doesn't add too many blocks and/or items"), "Hooks", "Bukkit", "Material");
 
     private final File file;
     private final HoconConfigurationLoader loader;
@@ -113,6 +114,10 @@ public class SoakConfiguration implements SoakConfig {
 
     public List<String> getLoadingEarlyPlugins() {
         return parse(LOAD_ON_CONSTRUCTION);
+    }
+
+    public List<String> getLoadingLatePlugins() {
+        return parse(LOAD_LATE);
     }
 
     @Override

@@ -1,4 +1,4 @@
-package org.soak.wrapper.inventory;
+package org.soak.wrapper.inventory.view;
 
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;

@@ -182,6 +182,7 @@ public abstract class AbstractItemMeta implements ItemMeta, Damageable {
 
     @Override
     public void setDisplayName(@Nullable String name) {
+        this.container = this.container.asMutableCopy(); //fixed ItemStackSnapshot not supporting the key
         if (name == null) {
             remove(Keys.CUSTOM_NAME);
             return;

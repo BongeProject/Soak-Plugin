@@ -40,17 +40,22 @@ import org.spongepowered.api.event.lifecycle.*;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.item.inventory.ItemStackSnapshot;
 import org.spongepowered.configurate.ConfigurateException;
+import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 import org.spongepowered.plugin.PluginContainer;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.jar.JarFile;
 import java.util.logging.ConsoleHandler;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @org.spongepowered.plugin.builtin.jvm.Plugin("soak")
@@ -197,6 +202,8 @@ public class SoakPlugin implements SoakExternalManager, WrapperManager {
         //SoakRegister.startEnchantmentTypes(this.logger);
         //SoakRegister.startPotionEffects(this.logger);
         PortalCooldownCustomData.createTickScheduler();
+
+        loadPlugins(true);
     }
 
     @Listener(order = Order.LAST)
@@ -266,12 +273,43 @@ public class SoakPlugin implements SoakExternalManager, WrapperManager {
         this.consoleHandler.setFormatter(new CustomLoggerFormat());
 
         SoakServer server = new NMSBounceSoakServer(Sponge::server);
-        SoakPluginManager pluginManager = server.getSoakPluginManager();
         //noinspection deprecation
         Bukkit.setServer(server);
 
+        loadPlugins(false);
+        Sponge.eventManager().registerListeners(this.container, new HelpMapListener());
+    }
+
+    private void loadPlugins(boolean late) {
+        SoakPluginManager pluginManager = SoakPlugin.server().getSoakPluginManager();
+        var latePlugins = this.configuration.getLoadingLatePlugins();
         Collection<File> files = Locator.files();
         for (File file : files) {
+            try {
+                var jarFile = new JarFile(file);
+                var entry = jarFile.getJarEntry("plugin.yml");
+                if (entry == null) {
+                    entry = jarFile.getJarEntry("paper-plugin.yml");
+                }
+                if (entry == null) {
+                    continue;
+                }
+                var is = jarFile.getInputStream(entry);
+                var br = new BufferedReader(new InputStreamReader(is));
+                var yamlNode = YamlConfigurationLoader.builder().buildAndLoadString(br.lines().collect(Collectors.joining("\n")));
+                var pluginName = yamlNode.node("name").getString();
+                if (pluginName == null) {
+                    continue;
+                }
+                if ((late && !latePlugins.contains(pluginName)) || (!late && latePlugins.contains(pluginName))) {
+                    continue;
+                }
+                jarFile.close();
+            } catch (Throwable e) {
+                continue;
+            }
+
+
             JavaPlugin plugin;
             try {
                 //noinspection deprecation
@@ -291,7 +329,6 @@ public class SoakPlugin implements SoakExternalManager, WrapperManager {
         }
         SoakPluginInjector.injectPlugins(loadedPlugins);
         this.getPlugins().forEach(container -> ((AbstractSoakPluginContainer) container).instance().onPluginsConstructed());
-        Sponge.eventManager().registerListeners(this.container, new HelpMapListener());
     }
 
     public Stream<SoakPluginContainer> getPlugins() {

@@ -1,7 +1,12 @@
 package org.soak.generate.bukkit;
 
+import io.papermc.paper.world.flag.FeatureDependant;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.dynamic.DynamicType;
+import org.bukkit.Keyed;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Translatable;
+import org.soak.map.SoakResourceKeyMap;
 import org.spongepowered.api.entity.EntityType;
 import org.spongepowered.api.entity.EntityTypes;
 import org.spongepowered.api.registry.RegistryTypes;
@@ -16,10 +21,11 @@ public class EntityTypeList {
     public static DynamicType.Unloaded<? extends Enum<?>> createEntityTypeList() throws Exception {
         var entityTypeIterator = EntityTypes.registry().stream().iterator();
         var entityTypes = new HashSet<String>();
+        entityTypes.add("UNKNOWN");
         while (entityTypeIterator.hasNext()) {
             var entityType = entityTypeIterator.next();
             var key = entityType.key(RegistryTypes.ENTITY_TYPE);
-            var name = MaterialList.toName(key);
+            var name = CommonGenerationCode.toName(key);
             entityTypes.add(name);
             ENTITY_TYPE_MAP.put(name, entityType);
         }
@@ -27,7 +33,13 @@ public class EntityTypeList {
                 .makeEnumeration(entityTypes)
                 .name("org.bukkit.entity.EntityType");
 
-        return classCreator.make();
+        classCreator = createGetKeyMethod(classCreator);
+
+        return classCreator.implement(FeatureDependant.class, Keyed.class, Translatable.class, net.kyori.adventure.translation.Translatable.class).make();
+    }
+
+    private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> createGetKeyMethod(DynamicType.Builder<? extends Enum<?>> classCreator) throws NoSuchMethodException {
+        return CommonGenerationCode.callMethod(EntityTypeList.class, classCreator, "getKey", NamespacedKey.class);
     }
 
     public static <T extends Enum<T>> EnumSet<T> values() {
@@ -55,6 +67,10 @@ public class EntityTypeList {
 
     public static Optional<EntityType<?>> getEntityType(Enum<?> enumEntry) {
         return Optional.ofNullable(ENTITY_TYPE_MAP.get(enumEntry.name()));
+    }
+
+    public static NamespacedKey getKey(Enum<?> enumEntry) {
+        return getEntityType(enumEntry).map(type -> type.key(RegistryTypes.ENTITY_TYPE)).map(SoakResourceKeyMap::mapToBukkit).orElseThrow(() -> new IllegalStateException(enumEntry.name() + " does not have a key"));
     }
 
 }

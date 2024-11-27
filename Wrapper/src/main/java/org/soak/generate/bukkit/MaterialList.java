@@ -8,6 +8,9 @@ import net.bytebuddy.jar.asm.Opcodes;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.ComponentLike;
 import net.kyori.adventure.text.TranslatableComponent;
+import org.bukkit.Keyed;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Translatable;
 import org.bukkit.block.BlockType;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.inventory.ItemType;
@@ -15,6 +18,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.soak.WrapperManager;
 import org.soak.exception.NotImplementedException;
+import org.soak.map.SoakResourceKeyMap;
 import org.soak.plugin.SoakManager;
 import org.soak.wrapper.inventory.SoakItemTypeTyped;
 import org.spongepowered.api.ResourceKey;
@@ -47,7 +51,7 @@ public class MaterialList {
             if (!shouldUseModded && !key.namespace().equals(ResourceKey.MINECRAFT_NAMESPACE)) {
                 continue;
             }
-            var name = toName(key);
+            var name = CommonGenerationCode.toName(key);
             materials.add(name);
 
             BLOCK_TYPE_MAP.put(name, blockType);
@@ -70,7 +74,7 @@ public class MaterialList {
             if (!shouldUseModded && !key.namespace().equals(ResourceKey.MINECRAFT_NAMESPACE)) {
                 continue;
             }
-            var name = toName(key);
+            var name = CommonGenerationCode.toName(key);
             materials.add(name);
             ITEM_TYPE_MAP.put(name, itemType);
         }
@@ -90,15 +94,13 @@ public class MaterialList {
         classCreator = buildIsLegacy(classCreator);
         classCreator = buildIsAir(classCreator);
         classCreator = buildIsBlock(classCreator);
+        classCreator = buildIsItem(classCreator);
+        classCreator = buildGetMaxDurabilityMethod(classCreator);
+        classCreator = buildGetKeyMethod(classCreator);
 
         classCreator = buildStaticMatchMaterial(classCreator);
-        return classCreator.make();
+        return classCreator.implement(Keyed.class, Translatable.class, net.kyori.adventure.translation.Translatable.class).make();
 
-    }
-
-    static String toName(ResourceKey key) {
-        var prefix = key.namespace().equals(ResourceKey.MINECRAFT_NAMESPACE) ? "" : toEnumName(key.namespace() + "_");
-        return prefix + toEnumName(key.value());
     }
 
     public static <T extends Enum<T>> EnumSet<T> values() {
@@ -141,83 +143,63 @@ public class MaterialList {
     }
 
     private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> buildAsBlockTypeMethod(DynamicType.Builder<? extends Enum<?>> builder) throws NoSuchMethodException {
-        return callMethod(builder, "asBlockType", BlockType.class);
+        return CommonGenerationCode.callMethod(MaterialList.class, builder, "asBlockType", BlockType.class);
     }
 
     private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> buildAsItemTypeMethod(DynamicType.Builder<? extends Enum<?>> builder) throws NoSuchMethodException {
-        return callMethod(builder, "asItemType", ItemType.class);
+        return CommonGenerationCode.callMethod(MaterialList.class, builder, "asItemType", ItemType.class);
     }
 
     private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> buildCreateBlockDataMethod(DynamicType.Builder<? extends Enum<?>> builder) throws NoSuchMethodException {
-        return callMethod(builder, "createBlockData", BlockData.class);
+        return CommonGenerationCode.callMethod(MaterialList.class, builder, "createBlockData", BlockData.class);
     }
 
     private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> buildCreateBlockDataStringArgumentMethod(DynamicType.Builder<? extends Enum<?>> builder) throws NoSuchMethodException {
-        return callMethod(builder, "createBlockData", BlockData.class, call -> call.withArgument(0), String.class);
+        return CommonGenerationCode.callMethod(MaterialList.class, builder, "createBlockData", BlockData.class, call -> call.withArgument(0), String.class);
     }
 
     private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> buildCreateBlockDataConsumerArgumentMethod(DynamicType.Builder<? extends Enum<?>> builder) throws NoSuchMethodException {
-        return callMethod(builder, "createBlockData", BlockData.class, call -> call.withArgument(0), Consumer.class);
+        return CommonGenerationCode.callMethod(MaterialList.class, builder, "createBlockData", BlockData.class, call -> call.withArgument(0), Consumer.class);
     }
 
     private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> buildGetBlastResistanceMethod(DynamicType.Builder<? extends Enum<?>> builder) throws NoSuchMethodException {
-        return callMethod(builder, "getBlastResistance", float.class);
+        return CommonGenerationCode.callMethod(MaterialList.class, builder, "getBlastResistance", float.class);
     }
 
     private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> buildGetTranslationKeyMethod(DynamicType.Builder<? extends Enum<?>> builder) throws NoSuchMethodException {
-        return callMethod(builder, "getTranslationKey", String.class);
+        return CommonGenerationCode.callMethod(MaterialList.class, builder, "getTranslationKey", String.class);
     }
 
     private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> buildGetCompostChanceMethod(DynamicType.Builder<? extends Enum<?>> builder) throws NoSuchMethodException {
-        return callMethod(builder, "getCompostChance", float.class);
+        return CommonGenerationCode.callMethod(MaterialList.class, builder, "getCompostChance", float.class);
+    }
+
+    private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> buildGetMaxDurabilityMethod(DynamicType.Builder<? extends Enum<?>> builder) throws NoSuchMethodException {
+        return CommonGenerationCode.callMethod(MaterialList.class, builder, "getMaxDurability", short.class);
+    }
+
+    private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> buildGetKeyMethod(DynamicType.Builder<? extends Enum<?>> builder) throws NoSuchMethodException {
+        return CommonGenerationCode.callMethod(MaterialList.class, builder, "getKey", NamespacedKey.class);
     }
 
     private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> buildIsLegacy(DynamicType.Builder<? extends Enum<?>> builder) throws NoSuchMethodException {
-        return callMethod(builder, "isLegacy", boolean.class);
+        return CommonGenerationCode.callMethod(MaterialList.class, builder, "isLegacy", boolean.class);
     }
 
     private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> buildIsAir(DynamicType.Builder<? extends Enum<?>> builder) throws NoSuchMethodException {
-        return callMethod(builder, "isAir", boolean.class);
+        return CommonGenerationCode.callMethod(MaterialList.class, builder, "isAir", boolean.class);
     }
 
     private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> buildIsBlock(DynamicType.Builder<? extends Enum<?>> builder) throws NoSuchMethodException {
-        return callMethod(builder, "isBlock", boolean.class);
+        return CommonGenerationCode.callMethod(MaterialList.class, builder, "isBlock", boolean.class);
+    }
+
+    private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> buildIsItem(DynamicType.Builder<? extends Enum<?>> builder) throws NoSuchMethodException {
+        return CommonGenerationCode.callMethod(MaterialList.class, builder, "isItem", boolean.class);
     }
 
     private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> buildStaticMatchMaterial(DynamicType.Builder<? extends Enum<?>> builder) throws NoSuchMethodException {
-        return callStaticMethodReturnSelf(builder, "matchMaterial", MethodCall::withAllArguments, String.class);
-    }
-
-    private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> callMethod(DynamicType.Builder<? extends Enum<?>> builder, String method, Class<?> returnType, Class<?>... arguments) throws NoSuchMethodException {
-        return callMethod(builder, method, returnType, extra -> extra, arguments);
-    }
-
-    private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> callMethod(DynamicType.Builder<? extends Enum<?>> builder, String method, Class<?> returnType, Function<MethodCall, MethodCall> extra, Class<?>... parameters) throws NoSuchMethodException {
-        List<Class<?>> arguments = new ArrayList<>();
-        arguments.add(Enum.class);
-        arguments.addAll(Arrays.asList(parameters));
-        var call = extra.apply(MethodCall
-                .invoke(MaterialList.class
-                        .getMethod(method, arguments.toArray(Class[]::new)))
-                .withThis());
-
-        return builder.defineMethod(method, returnType, Opcodes.ACC_PUBLIC)
-                .withParameters(parameters)
-                .intercept(call);
-    }
-
-    private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> callStaticMethodReturnSelf(DynamicType.Builder<? extends Enum<?>> builder, String method, Class<?>... arguments) throws NoSuchMethodException {
-        return callStaticMethodReturnSelf(builder, method, extra -> extra, arguments);
-    }
-
-    private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> callStaticMethodReturnSelf(DynamicType.Builder<? extends Enum<?>> builder, String method, Function<MethodCall, MethodCall> extra, Class<?>... parameters) throws NoSuchMethodException {
-
-        var call = extra.apply(MethodCall
-                .invoke(MaterialList.class
-                        .getMethod(method, parameters))).withAssigner(Assigner.DEFAULT, Assigner.Typing.DYNAMIC);
-        return builder.defineMethod(method, builder.toTypeDescription(), Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC)
-                .withParameters(parameters)
-                .intercept(call);
+        return CommonGenerationCode.callStaticMethodReturnSelf(MaterialList.class, builder, "matchMaterial", MethodCall::withAllArguments, String.class);
     }
 
     public static Optional<org.spongepowered.api.block.BlockType> getBlockType(Enum<?> enumEntry) {
@@ -262,6 +244,15 @@ public class MaterialList {
         return getBlockType(enumEntry).flatMap(type -> type.get(Keys.BLAST_RESISTANCE)).orElse(0.0).floatValue();
     }
 
+    public static NamespacedKey getKey(Enum<?> enumEntry) {
+        return getBlockType(enumEntry)
+                .map(type -> type.key(RegistryTypes.BLOCK_TYPE))
+                .or(() -> getItemType(enumEntry)
+                        .map(type -> type.key(RegistryTypes.ITEM_TYPE)))
+                .map(SoakResourceKeyMap::mapToBukkit)
+                .orElseThrow(() -> new RuntimeException(enumEntry.name() + " does not have a key"));
+    }
+
     public static boolean isLegacy(Enum<?> enumEntry) {
         return enumEntry.name().startsWith("LEGACY_");
     }
@@ -272,6 +263,14 @@ public class MaterialList {
 
     public static boolean isBlock(Enum<?> enumEntry) {
         return getBlockType(enumEntry).isPresent();
+    }
+
+    public static boolean isItem(Enum<?> enumEntry) {
+        return getItemType(enumEntry).isPresent();
+    }
+
+    public static short getMaxDurability(Enum<?> enumEntry) {
+        return getItemType(enumEntry).flatMap(item -> item.get(Keys.MAX_DURABILITY)).map(Integer::shortValue).orElse((short) 0);
     }
 
     public static float getCompostChance(Enum<?> enumEntry) {
@@ -313,9 +312,5 @@ public class MaterialList {
         } catch (RuntimeException e) {
             return null;
         }
-    }
-
-    static String toEnumName(String name) {
-        return name.toUpperCase().replace(" ", "_");
     }
 }

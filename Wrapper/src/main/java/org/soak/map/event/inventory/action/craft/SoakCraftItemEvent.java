@@ -8,7 +8,7 @@ import org.soak.WrapperManager;
 import org.soak.map.event.EventSingleListenerWrapper;
 import org.soak.map.item.SoakRecipeMap;
 import org.soak.plugin.SoakManager;
-import org.soak.wrapper.inventory.SoakInventoryView;
+import org.soak.wrapper.inventory.view.AbstractInventoryView;
 import org.spongepowered.api.data.Keys;
 import org.spongepowered.api.entity.living.player.server.ServerPlayer;
 import org.spongepowered.api.event.Listener;
@@ -53,7 +53,7 @@ public class SoakCraftItemEvent {
         var cause = event.cause();
         var spongeRecipe = event.recipe().orElseThrow(() -> new IllegalStateException("CraftItemEvent fired but no recipe found"));
         var bukkitRecipe = SoakRecipeMap.toBukkit(spongeRecipe);
-        var inventoryView = new SoakInventoryView(player.openInventory().orElseThrow(() -> new IllegalStateException("CraftItemEvent fired but player's inventory isnt open")));
+        var inventoryView = AbstractInventoryView.wrap(player.openInventory().orElseThrow(() -> new IllegalStateException("CraftItemEvent fired but player's inventory isnt open")));
         var slot = event.slot().orElseThrow(() -> new RuntimeException("Cannot get slot"));
         var slotIndex = slot.get(Keys.SLOT_INDEX).orElseThrow(() -> new RuntimeException("Cannot get slot index"));
         var slotType = InventoryType.SlotType.CRAFTING;

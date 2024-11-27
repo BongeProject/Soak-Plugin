@@ -39,8 +39,8 @@ import org.soak.map.item.SoakItemStackMap;
 import org.soak.plugin.SoakManager;
 import org.soak.utils.single.SoakSingleInstance;
 import org.soak.wrapper.inventory.SoakInventory;
-import org.soak.wrapper.inventory.SoakInventoryView;
-import org.soak.wrapper.inventory.SoakOpeningInventoryView;
+import org.soak.wrapper.inventory.view.AbstractInventoryView;
+import org.soak.wrapper.inventory.view.SoakOpeningInventoryView;
 import org.soak.wrapper.inventory.SoakPlayerInventory;
 import org.soak.wrapper.world.SoakWorld;
 import org.spongepowered.api.Sponge;
@@ -101,14 +101,14 @@ public class SoakPlayer extends AbstractHumanBase<ServerPlayer> implements Playe
             throw NotImplementedException.createByLazy(HumanEntity.class, "getOpenInventory");
         }
         var openInventory = opOpenInventory.get();
-        return new SoakInventoryView(openInventory);
+        return AbstractInventoryView.wrap(openInventory);
     }
 
     @Override
     public @Nullable InventoryView openInventory(@NotNull Inventory inventory) {
         SoakInventory<?> soakInv = (SoakInventory<?>) inventory;
         try {
-            return openInventory(soakInv.sponge(), soakInv.requestedTitle().orElse(null)).map(SoakInventoryView::new)
+            return openInventory(soakInv.sponge(), soakInv.requestedTitle().orElse(null)).map(AbstractInventoryView::wrap)
                     .orElse(null);
         } catch (UnsupportedOperationException ex) {
             Sponge.server().scheduler().executor(SoakManager.getManager().getOwnContainer()).execute(() -> {
@@ -120,7 +120,7 @@ public class SoakPlayer extends AbstractHumanBase<ServerPlayer> implements Playe
 
     @Override
     public void openInventory(@NotNull InventoryView inventory) {
-        var soakInv = (SoakInventoryView) inventory;
+        var soakInv = (AbstractInventoryView) inventory;
         Sponge.server()
                 .scheduler()
                 .executor(SoakManager.getManager().getOwnContainer())

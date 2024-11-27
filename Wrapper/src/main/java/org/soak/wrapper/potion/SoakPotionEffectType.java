@@ -1,5 +1,7 @@
 package org.soak.wrapper.potion;
 
+import net.kyori.adventure.text.TranslatableComponent;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Color;
 import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
@@ -9,43 +11,36 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionEffectTypeCategory;
 import org.jetbrains.annotations.NotNull;
 import org.soak.exception.NotImplementedException;
+import org.soak.map.SoakResourceKeyMap;
+import org.spongepowered.api.effect.potion.PotionEffectTypes;
+import org.spongepowered.api.registry.RegistryTypes;
 
 import java.util.Map;
 
 public class SoakPotionEffectType extends PotionEffectType {
 
-    private double duration;
-    private boolean isInstant;
-    private Color color;
-    private String name;
-    private String translationKey;
-    private int fakeId;
-    private NamespacedKey key;
+    org.spongepowered.api.effect.potion.PotionEffectType type;
 
-    public SoakPotionEffectType(double duration, boolean isInstant, Color color, String name, String translationKey, int fakeId, NamespacedKey key) {
-        this.color = color;
-        this.isInstant = isInstant;
-        this.name = name;
-        this.duration = duration;
-        this.translationKey = translationKey;
-        this.fakeId = fakeId;
-        this.key = key;
+    public SoakPotionEffectType(org.spongepowered.api.effect.potion.PotionEffectType type) {
+        this.type = type;
     }
 
     @Override
     public double getDurationModifier() {
-        return this.duration;
+        throw NotImplementedException.createByLazy(PotionEffectType.class, "getDurationModifier");
     }
 
     @Override
     @Deprecated
     public int getId() {
-        return this.fakeId;
+        //not implemented really
+        var effects = PotionEffectTypes.registry().stream().toList();
+        return effects.indexOf(this.type);
     }
 
     @Override
     public @NotNull String getName() {
-        return this.name;
+        return PlainTextComponentSerializer.plainText().serialize(this.type.asComponent());
     }
 
     @Override
@@ -55,7 +50,7 @@ public class SoakPotionEffectType extends PotionEffectType {
 
     @Override
     public boolean isInstant() {
-        return this.isInstant;
+        return this.type.isInstant();
     }
 
     @Override
@@ -65,7 +60,7 @@ public class SoakPotionEffectType extends PotionEffectType {
 
     @Override
     public @NotNull Color getColor() {
-        return this.color;
+        throw NotImplementedException.createByLazy(PotionEffectType.class, "getColor");
     }
 
     @Override
@@ -86,16 +81,21 @@ public class SoakPotionEffectType extends PotionEffectType {
 
     @Override
     public @NotNull String translationKey() {
-        return this.translationKey;
+        var component = this.type.asComponent();
+        if (!(component instanceof TranslatableComponent translate)) {
+            throw new IllegalStateException("No translation key found");
+        }
+
+        return translate.key();
     }
 
     @Override
     public @NotNull NamespacedKey getKey() {
-        return key;
+        return SoakResourceKeyMap.mapToBukkit(this.type.key(RegistryTypes.POTION_EFFECT_TYPE));
     }
 
     @Override
     public @NotNull String getTranslationKey() {
-        return translationKey;
+        return translationKey();
     }
 }

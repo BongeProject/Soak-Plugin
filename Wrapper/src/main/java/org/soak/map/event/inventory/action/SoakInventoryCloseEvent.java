@@ -5,7 +5,7 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.soak.WrapperManager;
 import org.soak.map.event.EventSingleListenerWrapper;
 import org.soak.plugin.SoakManager;
-import org.soak.wrapper.inventory.SoakInventoryView;
+import org.soak.wrapper.inventory.view.AbstractInventoryView;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.Order;
 import org.spongepowered.api.event.item.inventory.container.InteractContainerEvent;
@@ -45,7 +45,7 @@ public class SoakInventoryCloseEvent {
 
 
     private void fireEvent(InteractContainerEvent.Close spongeEvent, EventPriority priority) {
-        var inventoryView = new SoakInventoryView(spongeEvent.container());
+        var inventoryView = AbstractInventoryView.wrap(spongeEvent.container());
         InventoryCloseEvent bukkitEvent = new InventoryCloseEvent(inventoryView);
 
         SoakManager.<WrapperManager>getManager().getServer().getSoakPluginManager().callEvent(this.singleEventListener, bukkitEvent, priority);

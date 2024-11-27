@@ -1,4 +1,4 @@
-package org.soak.wrapper.inventory;
+package org.soak.wrapper.inventory.view;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -17,15 +17,26 @@ import org.soak.map.item.SoakItemStackMap;
 import org.soak.map.item.inventory.SoakInventoryMap;
 import org.soak.plugin.SoakManager;
 import org.soak.utils.ReflectionHelper;
+import org.soak.wrapper.inventory.SoakInventory;
 import org.spongepowered.api.item.inventory.Container;
 import org.spongepowered.api.item.inventory.ItemStackSnapshot;
 
-public class SoakInventoryView implements InventoryView {
+public class AbstractInventoryView implements InventoryView {
 
     private final Container spongeContainer;
 
-    public SoakInventoryView(Container container) {
+    private AbstractInventoryView(Container container) {
         this.spongeContainer = container;
+    }
+
+    public static AbstractInventoryView wrap(Container container) {
+        //TODO find out type
+        return wrap(container, InventoryView.class);
+    }
+
+    public static AbstractInventoryView wrap(Container container, Class<? extends InventoryView> view) {
+        //TODO other container views
+        return new AbstractInventoryView(container);
     }
 
     public @NotNull Container sponge() {
