@@ -22,9 +22,9 @@ jobs:
       - name: Build Soak
         run: ./gradlew build
       - name: Upload plugin
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: Soak-Vanilla.zip
+          name: Soak.zip
           path: Launch-External/build/libs/Soak.jar
           if-no-files-found: error
 
