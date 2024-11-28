@@ -25,5 +25,6 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: Soak-Vanilla.zip
-          path: plugin/build/libs/*.jar
+          path: Launch-External/build/libs/Soak.jar
+          if-no-files-found: error
 
