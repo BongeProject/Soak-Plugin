@@ -39,7 +39,7 @@ public class SoakRegistry<SpongeType, R extends Keyed> implements ISoakRegistry<
 
     @Override
     public @NotNull R getOrThrow(@NotNull NamespacedKey namespacedKey) {
-        return stream().filter(key -> key.getKey().equals(namespacedKey)).findAny().orElseThrow();
+        return stream().filter(key -> key.getKey().equals(namespacedKey)).findAny().orElseThrow(() -> new IllegalArgumentException("Could not find the value with the key: " + namespacedKey.asString()));
     }
 
     @Override

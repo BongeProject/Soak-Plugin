@@ -4,6 +4,9 @@ import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import org.bukkit.Keyed;
 import org.bukkit.Registry;
+import org.soak.wrapper.entity.living.animal.cat.SoakCatType;
+import org.soak.wrapper.entity.living.villager.SoakVillagerProfession;
+import org.soak.wrapper.entity.living.villager.SoakVillagerType;
 import org.soak.wrapper.potion.SoakPotionEffectType;
 import org.jspecify.annotations.Nullable;
 import org.soak.map.*;
@@ -12,8 +15,7 @@ import org.soak.map.item.inventory.SoakEquipmentMap;
 import org.soak.wrapper.inventory.SoakMenuType;
 import org.soak.wrapper.enchantment.SoakEnchantment;
 import org.spongepowered.api.block.BlockTypes;
-import org.spongepowered.api.data.type.ArmorMaterials;
-import org.spongepowered.api.data.type.BannerPatternShapes;
+import org.spongepowered.api.data.type.*;
 import org.spongepowered.api.effect.potion.PotionEffectTypes;
 import org.spongepowered.api.effect.sound.music.MusicDiscs;
 import org.spongepowered.api.event.cause.entity.damage.DamageTypes;
@@ -44,6 +46,9 @@ public class SoakRegistryAccess implements RegistryAccess {
             SoakRegistry.simple(RegistryKey.BLOCK, BlockTypes::registry, SoakBlockMap::toBukkitType),
             SoakRegistry.simple(RegistryKey.MENU, ContainerTypes::registry, SoakMenuType::new),
             SoakRegistry.simple(RegistryKey.MOB_EFFECT, PotionEffectTypes::registry, SoakPotionEffectType::new),
+            SoakRegistry.simple(RegistryKey.CAT_VARIANT, CatTypes::registry, SoakCatType::new),
+            SoakRegistry.simple(RegistryKey.VILLAGER_TYPE, VillagerTypes::registry, SoakVillagerType::new),
+            SoakRegistry.simple(RegistryKey.VILLAGER_PROFESSION, ProfessionTypes::registry, SoakVillagerProfession::new),
             new SoakInvalidRegistry<>(RegistryKey.WOLF_VARIANT)
     );
 
@@ -65,8 +70,9 @@ public class SoakRegistryAccess implements RegistryAccess {
             case "org.bukkit.damage.DamageType" -> (Registry<T>) getRegistry(RegistryKey.DAMAGE_TYPE);
             case "org.bukkit.JukeboxSong" -> (Registry<T>) getRegistry(RegistryKey.JUKEBOX_SONG);
             case "org.bukkit.entity.Wolf.Variant" -> (Registry<T>) getRegistry(RegistryKey.WOLF_VARIANT);
-            case "org.bukkit.entity.Villager.Profession" -> (Registry<T>) getRegistry(RegistryKey.VILLAGER_PROFESSION);
-            case "org.bukkit.entity.Villager.Type" -> (Registry<T>) getRegistry(RegistryKey.VILLAGER_TYPE);
+            case "org.bukkit.entity.Cat.Type" -> (Registry<T>) getRegistry(RegistryKey.CAT_VARIANT);
+            case "org.bukkit.entity.Villager$Profession" -> (Registry<T>) getRegistry(RegistryKey.VILLAGER_PROFESSION);
+            case "org.bukkit.entity.Villager$Type" -> (Registry<T>) getRegistry(RegistryKey.VILLAGER_TYPE);
             case "org.bukkit.entity.memory.MemoryKey" -> (Registry<T>) getRegistry(RegistryKey.MEMORY_MODULE_TYPE);
             case "org.bukkit.Fluid" -> (Registry<T>) getRegistry(RegistryKey.FLUID);
             case "org.bukkit.entity.Frog.Variant" -> (Registry<T>) getRegistry(RegistryKey.FROG_VARIANT);
@@ -75,8 +81,6 @@ public class SoakRegistryAccess implements RegistryAccess {
             case "org.bukkit.inventory.MenuType" -> (Registry<T>) getRegistry(RegistryKey.MENU);
             default -> {
                 System.err.println("Unknown registry for class: " + aClass.getCanonicalName());
-                System.out.println(aClass.getTypeName());
-                System.out.println(aClass.getPackageName());
                 yield null;
             }
         };

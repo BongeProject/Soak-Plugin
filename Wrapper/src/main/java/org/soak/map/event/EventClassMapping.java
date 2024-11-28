@@ -1,6 +1,7 @@
 package org.soak.map.event;
 
 
+import io.papermc.paper.event.player.AsyncChatEvent;
 import org.bukkit.event.Event;
 import org.bukkit.event.block.*;
 import org.bukkit.event.enchantment.EnchantItemEvent;
@@ -9,6 +10,7 @@ import org.bukkit.event.inventory.*;
 import org.bukkit.event.player.*;
 import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.event.server.PluginEnableEvent;
+import org.bukkit.event.server.ServerCommandEvent;
 import org.bukkit.event.server.ServerListPingEvent;
 import org.bukkit.event.vehicle.VehicleMoveEvent;
 import org.bukkit.event.world.PortalCreateEvent;
@@ -20,10 +22,13 @@ import org.soak.map.event.block.piston.SoakPistonRetractEvent;
 import org.soak.map.event.block.portal.SoakEndPortalCreateEvent;
 import org.soak.map.event.block.portal.SoakNetherPortalCreateEvent;
 import org.soak.map.event.command.SoakPreCommandEvent;
+import org.soak.map.event.command.SoakServerCommandEvent;
 import org.soak.map.event.entity.SoakCreatureSpawnEvent;
 import org.soak.map.event.entity.SoakEntityDeathEvent;
 import org.soak.map.event.entity.SoakEntityExplosionEvent;
 import org.soak.map.event.entity.move.*;
+import org.soak.map.event.entity.player.chat.SoakAsyncChatEvent;
+import org.soak.map.event.entity.player.chat.SoakAsyncPlayerChatEvent;
 import org.soak.map.event.entity.player.combat.SoakPlayerDeathEvent;
 import org.soak.map.event.entity.player.combat.SoakPlayerRespawnEvent;
 import org.soak.map.event.entity.player.connection.SoakPlayerJoinEvent;
@@ -185,6 +190,15 @@ public class EventClassMapping {
         }
         if (name.equals(ServerListPingEvent.class.getName())) {
             return array(SoakServerListPingEvent.class);
+        }
+        if (name.equals(ServerCommandEvent.class.getName())) {
+            return array(SoakServerCommandEvent.class);
+        }
+        if (name.equals(AsyncPlayerChatEvent.class.getName())) {
+            return array(SoakAsyncPlayerChatEvent.class);
+        }
+        if (name.equals(AsyncChatEvent.class.getName())) {
+            return array(SoakAsyncChatEvent.class);
         }
         throw new RuntimeException("No mapping found for Bukkit Event: " + bukkitClass.getName());
     }

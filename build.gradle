@@ -1,8 +1,14 @@
+import java.time.Clock
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+
 plugins {
     id("java-library")
 }
 
 group = "org.soak"
+var dateTime = LocalDateTime.now(Clock.systemUTC())
+version = project.property("BUKKIT_VERSION") + "." + dateTime.format(DateTimeFormatter.ofPattern("yyMMddHHmm"))
 
 java {
     toolchain {
@@ -12,7 +18,6 @@ java {
 }
 
 allprojects {
-    version = "1.0.0"
     repositories {
         mavenCentral()
         maven {
