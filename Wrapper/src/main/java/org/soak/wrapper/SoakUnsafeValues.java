@@ -43,6 +43,7 @@ import org.soak.plugin.SoakManager;
 import org.soak.wrapper.inventory.SoakItemStack;
 import org.soak.wrapper.plugin.lifecycle.event.SoakLifecycleEventManager;
 import org.spongepowered.api.ResourceKey;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.data.Key;
 import org.spongepowered.api.data.Keys;
 import org.spongepowered.api.data.type.InstrumentTypes;
@@ -59,6 +60,13 @@ import java.util.function.BooleanSupplier;
 
 @SuppressWarnings("deprecation")
 public class SoakUnsafeValues implements UnsafeValues {
+
+    //Hidden method used by some plugins
+    //these are unique to every minecraft version
+    public String getMappingsVersion() {
+        return "7092ff1ff9352ad7e2260dc150e6a3ec";
+    }
+
     @Override
     public GsonComponentSerializer colorDownsamplingGsonComponentSerializer() {
         throw NotImplementedException.createByLazy(UnsafeValues.class, "colorDownsamplingGsonComponentSerializer");
@@ -121,7 +129,7 @@ public class SoakUnsafeValues implements UnsafeValues {
 
     @Override
     public int getDataVersion() {
-        throw NotImplementedException.createByLazy(UnsafeValues.class, "getDataVersion");
+        return Sponge.platform().minecraftVersion().dataVersion().orElseThrow();
     }
 
     @Override
@@ -318,7 +326,7 @@ public class SoakUnsafeValues implements UnsafeValues {
 
     @Override
     public int getProtocolVersion() {
-        throw NotImplementedException.createByLazy(UnsafeValues.class, "getProtocolVersion");
+        return Sponge.platform().minecraftVersion().protocolVersion();
     }
 
     @Override

@@ -20,8 +20,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
 import org.jetbrains.annotations.Unmodifiable;
-import org.mose.collection.stream.builder.CollectionStreamBuilder;
-import org.mose.collection.stream.specific.list.ListStream;
 import org.soak.exception.NotImplementedException;
 import org.soak.map.item.SoakItemStackMap;
 import org.soak.utils.ListMappingUtils;
@@ -108,7 +106,7 @@ public class SoakItemStack extends ItemStack {
 
     @Override
     public void setAmount(int amount) {
-        super.setAmount(amount);
+        meta.setQuantity(amount);
     }
 
     @Override

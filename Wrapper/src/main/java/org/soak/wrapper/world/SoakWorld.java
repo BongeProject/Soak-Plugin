@@ -294,9 +294,9 @@ public class SoakWorld implements World, SoakSingleInstance<org.spongepowered.ap
     @Override
     public @NotNull Collection<Entity> getNearbyEntities(@NotNull BoundingBox boundingBox, @Nullable Predicate<? super Entity> predicate) {
         var spongeBoundingBox = SoakBoundingBoxMap.toSponge(boundingBox);
-        Predicate<org.spongepowered.api.entity.Entity> spongePredicate = (entity) -> predicate == null || predicate.test(AbstractEntity.wrapEntity(entity));
+        Predicate<org.spongepowered.api.entity.Entity> spongePredicate = (entity) -> predicate == null || predicate.test(AbstractEntity.wrap(entity));
         var spongeCollection = this.sponge().entities(spongeBoundingBox, spongePredicate);
-        return CollectionStreamBuilder.builder().collection(spongeCollection).basicMap(entity -> (Entity)AbstractEntity.wrapEntity(entity)).buildSet();
+        return CollectionStreamBuilder.builder().collection(spongeCollection).basicMap(entity -> (Entity)AbstractEntity.wrap(entity)).buildSet();
     }
 
     @Override

@@ -111,7 +111,13 @@ public class SoakPluginClassLoader extends URLClassLoader implements ConfiguredP
         if (foundGeneratedClass.isPresent()) {
             return foundGeneratedClass.get();
         }
-        return super.findClass(name);
+        try {
+            return super.findClass(name);
+        } catch (ClassNotFoundException e) {
+            //allow other class loaders to supply there solution if possible
+            throw e;
+            //find a solution for NMS
+        }
     }
 
     @Override

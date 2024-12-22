@@ -51,6 +51,11 @@ public abstract class AbstractLivingEntity<E extends Living> extends AbstractEnt
     }
 
     @Override
+    public boolean canUseEquipmentSlot(@NotNull EquipmentSlot equipmentSlot) {
+        throw NotImplementedException.createByLazy(LivingEntity.class, "canUseEquipmentSlot", EquipmentSlot.class);
+    }
+
+    @Override
     public @Nullable BlockFace getTargetBlockFace(int i, @NotNull FluidCollisionMode fluidCollisionMode) {
         throw NotImplementedException.createByLazy(LivingEntity.class, "getTargetBlockFace", FluidCollisionMode.class);
     }

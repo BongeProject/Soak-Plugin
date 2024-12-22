@@ -28,6 +28,7 @@ import org.spongepowered.api.data.Keys;
 import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.registry.RegistryTypes;
 import org.spongepowered.api.state.StateContainer;
+import org.spongepowered.api.tag.BlockTypeTags;
 import org.spongepowered.api.tag.ItemTypeTags;
 
 import java.util.*;
@@ -97,6 +98,7 @@ public class MaterialList {
         classCreator = buildIsItem(classCreator);
         classCreator = buildGetMaxDurabilityMethod(classCreator);
         classCreator = buildGetKeyMethod(classCreator);
+        classCreator = buildIsTransparent(classCreator);
 
         classCreator = buildStaticMatchMaterial(classCreator);
         return classCreator.implement(Keyed.class, Translatable.class, net.kyori.adventure.translation.Translatable.class).make();
@@ -198,6 +200,10 @@ public class MaterialList {
         return CommonGenerationCode.callMethod(MaterialList.class, builder, "isItem", boolean.class);
     }
 
+    private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> buildIsTransparent(DynamicType.Builder<? extends Enum<?>> builder) throws NoSuchMethodException {
+        return CommonGenerationCode.callMethod(MaterialList.class, builder, "isTransparent", boolean.class);
+    }
+
     private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> buildStaticMatchMaterial(DynamicType.Builder<? extends Enum<?>> builder) throws NoSuchMethodException {
         return CommonGenerationCode.callStaticMethodReturnSelf(MaterialList.class, builder, "matchMaterial", MethodCall::withAllArguments, String.class);
     }
@@ -259,6 +265,13 @@ public class MaterialList {
 
     public static boolean isAir(Enum<?> enumEntry) {
         return getItemType(enumEntry).map(type -> type.equals(ItemTypes.AIR.get())).orElse(false);
+    }
+
+    public static boolean isTransparent(Enum<?> enumEntry) {
+        if(isAir(enumEntry)){
+            return true;
+        }
+        return getItemType(enumEntry).map(type -> type.equals(ItemTypes.GLASS_PANE.get()) || type.equals(ItemTypes.GLASS.get())).orElse(false);
     }
 
     public static boolean isBlock(Enum<?> enumEntry) {

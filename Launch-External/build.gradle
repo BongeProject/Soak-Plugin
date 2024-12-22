@@ -1,7 +1,4 @@
 import java.nio.file.Files
-import java.nio.file.attribute.BasicFileAttributes
-import java.nio.file.attribute.FileAttribute
-import java.util.stream.Collectors
 
 plugins {
     id 'java'
@@ -123,7 +120,7 @@ jar {
         }
     }
 
-    var excludeList = new String[]{"Material.class"}
+    var excludeList = new String[]{"Material.class", "EntityType.class"}
 
     from(fat).exclude {
         return excludeList.contains(it.name);

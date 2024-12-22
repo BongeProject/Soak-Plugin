@@ -23,6 +23,7 @@ import org.soak.plugin.external.SoakConfig;
 import org.soak.plugin.loader.Locator;
 import org.soak.plugin.loader.common.AbstractSoakPluginContainer;
 import org.soak.plugin.loader.common.SoakPluginInjector;
+import org.soak.utils.RegisterUtils;
 import org.soak.utils.SoakMemoryStore;
 import org.soak.utils.log.CustomLoggerFormat;
 import org.soak.wrapper.SoakServer;
@@ -62,15 +63,13 @@ import java.util.stream.Stream;
 public class SoakPlugin implements SoakExternalManager, WrapperManager {
 
     private static SoakPlugin plugin;
+    public final Collection<Class<?>> generatedClasses = new LinkedBlockingQueue<>();
     private final SoakConfiguration configuration;
     private final PluginContainer container;
     private final Logger logger;
     private final SoakMemoryStore memoryStore = new SoakMemoryStore();
-
     private final SoakServerProperties serverProperties = new SoakServerProperties();
     private final ConsoleHandler consoleHandler = new ConsoleHandler();
-
-    public final Collection<Class<?>> generatedClasses = new LinkedBlockingQueue<>();
     private final int generatedClassesCount = 2;
     private final Collection<SoakPluginContainer> loadedPlugins = new ArrayList<>();
 
@@ -88,6 +87,14 @@ public class SoakPlugin implements SoakExternalManager, WrapperManager {
         } catch (ConfigurateException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static SoakPlugin plugin() {
+        return plugin;
+    }
+
+    public static SoakServer server() {
+        return (SoakServer) Bukkit.getServer();
     }
 
     @Listener
@@ -109,14 +116,6 @@ public class SoakPlugin implements SoakExternalManager, WrapperManager {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    public static SoakPlugin plugin() {
-        return plugin;
-    }
-
-    public static SoakServer server() {
-        return (SoakServer) Bukkit.getServer();
     }
 
     @Override
@@ -276,6 +275,8 @@ public class SoakPlugin implements SoakExternalManager, WrapperManager {
         //noinspection deprecation
         Bukkit.setServer(server);
 
+        RegisterUtils.registerSerializable();
+
         loadPlugins(false);
         Sponge.eventManager().registerListeners(this.container, new HelpMapListener());
     }
@@ -329,6 +330,10 @@ public class SoakPlugin implements SoakExternalManager, WrapperManager {
         }
         SoakPluginInjector.injectPlugins(loadedPlugins);
         this.getPlugins().forEach(container -> ((AbstractSoakPluginContainer) container).instance().onPluginsConstructed());
+        if (late) {
+            this.getPlugins().forEach(container -> ((AbstractSoakPluginContainer) container).getBukkitInstance().onLoad());
+
+        }
     }
 
     public Stream<SoakPluginContainer> getPlugins() {

@@ -22,6 +22,8 @@ import org.mose.collection.stream.builder.CollectionStreamBuilder;
 import org.soak.WrapperManager;
 import org.soak.data.sponge.SoakKeys;
 import org.soak.exception.NotImplementedException;
+import org.soak.generate.bukkit.EntityTypeList;
+import org.soak.generate.bukkit.EntityTypeMappingEntry;
 import org.soak.map.SoakDirectionMap;
 import org.soak.map.SoakEntityMap;
 import org.soak.map.SoakMessageMap;
@@ -31,8 +33,6 @@ import org.soak.utils.GeneralHelper;
 import org.soak.utils.ListMappingUtils;
 import org.soak.wrapper.command.SoakCommandSender;
 import org.soak.wrapper.entity.living.AbstractLivingEntity;
-import org.soak.wrapper.entity.living.animal.sheep.SoakSheep;
-import org.soak.wrapper.entity.projectile.SoakFirework;
 import org.soak.wrapper.persistence.SoakMutablePersistentDataContainer;
 import org.soak.wrapper.world.SoakWorld;
 import org.spongepowered.api.Sponge;
@@ -41,11 +41,6 @@ import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.data.Keys;
 import org.spongepowered.api.data.value.Value;
 import org.spongepowered.api.entity.living.Living;
-import org.spongepowered.api.entity.living.animal.Sheep;
-import org.spongepowered.api.entity.living.player.server.ServerPlayer;
-import org.spongepowered.api.entity.projectile.explosive.FireworkRocket;
-import org.spongepowered.api.entity.weather.LightningBolt;
-import org.spongepowered.api.registry.RegistryTypes;
 import org.spongepowered.api.service.permission.Subject;
 import org.spongepowered.api.util.AABB;
 import org.spongepowered.api.util.Direction;
@@ -69,29 +64,20 @@ public abstract class AbstractEntity<E extends org.spongepowered.api.entity.Enti
         this.entity = entity;
     }
 
-    public static AbstractEntity<? extends org.spongepowered.api.entity.Entity> wrapEntity(org.spongepowered.api.entity.Entity entity) {
-        if (entity instanceof ServerPlayer) {
-            return SoakManager.<WrapperManager>getManager().getMemoryStore().get((ServerPlayer) entity);
+    private static <SE extends org.spongepowered.api.entity.Entity, SoakEntity extends Entity> SoakEntity wrapEntity(SE entity) {
+        EntityTypeMappingEntry<SE, SoakEntity> entityTypeMapping = (EntityTypeMappingEntry<SE, SoakEntity>) EntityTypeList.getEntityTypeMapping(entity.type());
+        if(!entityTypeMapping.isFinal()){
+            entityTypeMapping.updateWithSoakClass((Class<SE>)entity.getClass());
         }
-        if (entity instanceof FireworkRocket) {
-            return new SoakFirework(Sponge.systemSubject(), Sponge.systemSubject(), (FireworkRocket) entity);
-        }
-        if (entity instanceof LightningBolt bolt) {
-            return new SoakLightningStrike(bolt);
-        }
-        if (entity instanceof Sheep) {
-            return new SoakSheep((Sheep) entity);
-        }
-        SoakManager.getManager().getLogger().warn("No mapping for: " + entity.type().key(RegistryTypes.ENTITY_TYPE).asString());
-        return new SoakEntity<>(Sponge.systemSubject(), Sponge.systemSubject(), entity);
+        return entityTypeMapping.createMapping(entity);
     }
 
     public static <E extends Living> AbstractLivingEntity<E> wrap(E living) {
-        return (AbstractLivingEntity<E>) (Object) wrap((org.spongepowered.api.entity.Entity) living);
+        return (AbstractLivingEntity<E>) (Object) wrapEntity(living);
     }
 
-    public static <E extends org.spongepowered.api.entity.Entity> AbstractEntity<E> wrap(E entity) {
-        return (AbstractEntity<E>) wrapEntity(entity);
+    public static <E extends org.spongepowered.api.entity.Entity> AbstractEntity<?> wrap(E entity) {
+        return wrapEntity(entity);
     }
 
     public E spongeEntity() {
@@ -714,13 +700,13 @@ public abstract class AbstractEntity<E extends org.spongepowered.api.entity.Enti
     }
 
     @Override
-    public void setInvisible(boolean b) {
-
+    public boolean isInvisible() {
+        return false;
     }
 
     @Override
-    public boolean isInvisible() {
-        return false;
+    public void setInvisible(boolean b) {
+
     }
 
     @Override

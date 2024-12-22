@@ -8,7 +8,7 @@ import org.bukkit.inventory.meta.FireworkMeta;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.soak.exception.NotImplementedException;
-import org.soak.wrapper.inventory.meta.SoakFireworkMeta;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.data.Keys;
 import org.spongepowered.api.data.value.Value;
 import org.spongepowered.api.entity.projectile.explosive.FireworkRocket;
@@ -18,6 +18,10 @@ import org.spongepowered.api.util.Ticks;
 import java.util.UUID;
 
 public class SoakFirework extends AbstractProjectile<FireworkRocket> implements Firework {
+
+    public SoakFirework(FireworkRocket entity) {
+        this(Sponge.systemSubject(), Sponge.systemSubject(), entity);
+    }
 
     public SoakFirework(Subject subject, Audience audience, FireworkRocket entity) {
         super(subject, audience, entity);

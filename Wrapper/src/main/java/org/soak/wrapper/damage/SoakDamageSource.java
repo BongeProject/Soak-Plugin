@@ -32,12 +32,12 @@ public class SoakDamageSource implements DamageSource {
 
     @Override
     public @Nullable Entity getCausingEntity() {
-        return this.source.indirectSource().map(SoakEntity::wrapEntity).orElse(null);
+        return this.source.indirectSource().map(SoakEntity::wrap).orElse(null);
     }
 
     @Override
     public @Nullable Entity getDirectEntity() {
-        return this.source.source().map(SoakEntity::wrapEntity).orElse(null);
+        return this.source.source().map(SoakEntity::wrap).orElse(null);
     }
 
     @Override
