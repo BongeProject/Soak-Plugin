@@ -1,19 +1,10 @@
-package org.soak.wrapper.v1_19_R4;
+package org.soak.wrapper.v1_21_R2;
 
-import org.bukkit.NamespacedKey;
-import org.bukkit.World;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.Recipe;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.soak.annotation.UsesNms;
 import org.soak.exception.NMSUsageException;
 import org.soak.wrapper.SoakServer;
 import org.spongepowered.api.Server;
 
-import java.util.List;
-import java.util.UUID;
 import java.util.function.Supplier;
 
 public class NMSBounceSoakServer extends SoakServer {

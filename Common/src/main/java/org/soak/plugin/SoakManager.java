@@ -3,7 +3,9 @@ package org.soak.plugin;
 import org.apache.logging.log4j.Logger;
 import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
 import org.soak.exception.NMSUsageException;
+import org.soak.plugin.paper.loader.FoundClassLoader;
 import org.spongepowered.api.Platform;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.plugin.PluginContainer;
@@ -46,6 +48,8 @@ public interface SoakManager {
     ConsoleHandler getConsole();
 
     ArtifactVersion getVersion();
+
+    @NotNull FoundClassLoader getSoakClassLoader(@NotNull SoakPluginContainer container);
 
     default SoakPluginContainer getSoakContainer(Plugin plugin) {
         return getBukkitSoakContainers().filter(pc -> pc.getBukkitInstance().equals(plugin)).findAny().orElseThrow(() -> new RuntimeException("A plugin instance was created for " + plugin.getName() + " but no container could be found"));

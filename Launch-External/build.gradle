@@ -72,8 +72,10 @@ jar {
     dependsOn(":CollectionStream:jar")
     dependsOn(":Override:jar")
     dependsOn(":Launch-External:Neo:jar")
+    dependsOn(":NMSBounce:jar")
 
-    List<FileTree> fat = configurations.runtimeClasspath.filter {
+    var fat = configurations.runtimeClasspath.filter {
+        System.out.println("Name: " + it.name)
         return it.name.startsWith("Launch-Common")
                 || it.name.startsWith("Common-")
                 || it.name.startsWith("Wrapper-")
@@ -118,6 +120,11 @@ jar {
         } else {
             new RuntimeException(folder.absolutePath + " was not found, this may lead to some compatibility issues").printStackTrace()
         }
+    }
+
+    var insertJarFiles = new String[]{"../NMSBounce/build/libs/NMSBounce.jar"}
+    for(var file : insertJarFiles){
+        fat.add(files(file))
     }
 
     var excludeList = new String[]{"Material.class", "EntityType.class"}

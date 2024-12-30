@@ -6,7 +6,6 @@ import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
-import org.bukkit.command.PluginCommand;
 import org.bukkit.command.PluginCommandYamlParser;
 import org.bukkit.plugin.InvalidDescriptionException;
 import org.bukkit.plugin.Plugin;
@@ -17,10 +16,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.soak.WrapperManager;
 import org.soak.io.SoakServerProperties;
+import org.soak.plugin.paper.loader.FoundClassLoader;
 import org.soak.plugin.paper.loader.SoakPluginClassLoader;
 import org.soak.plugin.paper.meta.SoakPluginMetaBuilder;
 import org.soak.utils.SoakMemoryStore;
-import org.soak.wrapper.v1_19_R4.NMSBounceSoakServer;
+import org.soak.wrapper.v1_21_R2.NMSBounceSoakServer;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.plugin.PluginContainer;
 
@@ -49,7 +49,8 @@ public class AbstractSpongePluginMain implements SoakInternalManager, WrapperMan
     final Collection<Command> commands = new LinkedTransferQueue<>();
     final InternalSoakPluginContainer soakPluginContainer = new InternalSoakPluginContainer(this);
     final PluginContainer container;
-    private final Function<ClassLoader, Class<? extends JavaPlugin>> loaderToMain;
+    private final Function<FoundClassLoader, Class<? extends JavaPlugin>> loaderToMain;
+    private final Function<Class<? extends JavaPlugin>, FoundClassLoader> mainToLoader;
     private final String[] pathToPlugins;
     private final Logger logger;
     private final SoakServerProperties serverProperties = new SoakServerProperties();
@@ -57,20 +58,21 @@ public class AbstractSpongePluginMain implements SoakInternalManager, WrapperMan
     private final SoakMemoryStore memoryStore = new SoakMemoryStore();
     private final Collection<Class<?>> generatedClasses = new LinkedBlockingQueue<>();
     @Nullable
-    private URLClassLoader loader;
+    private FoundClassLoader loader;
 
     @Nullable
     private JavaPlugin plugin;
 
     @Deprecated
-    public AbstractSpongePluginMain(Function<ClassLoader, Class<? extends JavaPlugin>> loaderToMain, Logger logger, PluginContainer container) {
-        this(loaderToMain, logger, container, new String[0]);
+    public AbstractSpongePluginMain(Function<Class<? extends JavaPlugin>, FoundClassLoader> mainToLoader, Function<FoundClassLoader, Class<? extends JavaPlugin>> loaderToMain, Logger logger, PluginContainer container) {
+        this(mainToLoader, loaderToMain, logger, container, new String[0]);
     }
 
-    public AbstractSpongePluginMain(Function<ClassLoader, Class<? extends JavaPlugin>> loaderToMain, Logger logger, PluginContainer container, String... pathsToPlugins) {
+    public AbstractSpongePluginMain(Function<Class<? extends JavaPlugin>, FoundClassLoader> mainToLoader, Function<FoundClassLoader, Class<? extends JavaPlugin>> loaderToMain, Logger logger, PluginContainer container, String... pathsToPlugins) {
         if (pathsToPlugins.length == 0) {
             throw new IllegalStateException("'PathsToPlugins' needs to be filled");
         }
+        this.mainToLoader = mainToLoader;
         this.loaderToMain = loaderToMain;
         this.pathToPlugins = pathsToPlugins;
         this.logger = logger;
@@ -106,7 +108,7 @@ public class AbstractSpongePluginMain implements SoakInternalManager, WrapperMan
             }
         }
 
-        loader = new URLClassLoader(copiedFiles.stream().map(file -> {
+        loader = new SoakClassLoader(copiedFiles.stream().map(file -> {
             try {
                 var url = file.toURI().toURL();
                 this.container.logger().info("Loading Bukkit file of '" + url.toString() + "'");
@@ -143,7 +145,7 @@ public class AbstractSpongePluginMain implements SoakInternalManager, WrapperMan
 
         Class<? extends JavaPlugin> javaPluginClass = this.loaderToMain.apply(loader);
         plugin = javaPluginClass.getConstructor().newInstance();
-        SoakPluginClassLoader.setupPlugin(plugin, this.container.metadata().id(), getPluginFile(), new File(getPluginFolder(), "config.yml"), getPluginFolder(), this::getPluginMeta, () -> loader);
+        SoakPluginClassLoader.setupPlugin(plugin, this.container.metadata().id(), getPluginFile(), new File(getPluginFolder(), "config.yml"), getPluginFolder(), this::getPluginMeta, () -> (ClassLoader) loader);
         this.commands.addAll(PluginCommandYamlParser.parse(plugin));
     }
 
@@ -253,5 +255,10 @@ public class AbstractSpongePluginMain implements SoakInternalManager, WrapperMan
     @Override
     public ArtifactVersion getVersion() {
         return soakVersion;
+    }
+
+    @Override
+    public @NotNull FoundClassLoader getSoakClassLoader(@NotNull SoakPluginContainer container) {
+        return this.mainToLoader.apply(container.getBukkitInstance().getClass());
     }
 }

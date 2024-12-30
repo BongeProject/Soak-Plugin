@@ -52,7 +52,6 @@ public class SoakPluginManager implements org.bukkit.plugin.PluginManager {
         return this.spongePluginManager.get();
     }
 
-
     @Override
     public @Nullable JavaPlugin loadPlugin(@NotNull File file) throws InvalidPluginException, InvalidDescriptionException, UnknownDependencyException {
         var context = new SoakPluginProviderContext(file);
@@ -239,7 +238,7 @@ public class SoakPluginManager implements org.bukkit.plugin.PluginManager {
 
     @Override
     public @Nullable Permission getPermission(@NotNull String name) {
-        throw NotImplementedException.createByLazy(SoakPluginManager.class, "getPermission", String.class);
+        return permissionService().flatMap(service -> service.descriptions().stream().filter(d -> d.id().equals(name)).findAny()).map(d -> SoakPermissionMap.toBukkit(d)).orElse(null);
     }
 
     @Override

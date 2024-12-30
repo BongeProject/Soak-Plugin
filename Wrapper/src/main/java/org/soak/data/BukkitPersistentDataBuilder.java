@@ -38,7 +38,7 @@ public class BukkitPersistentDataBuilder implements DataBuilder<BukkitPersistent
     private <T> Optional<BukkitData<T>> getData(DataView view) {
         Optional<String> opPath = view.getString(BukkitData.PATH);
         Optional<String> opPlugin = view.getString(BukkitData.PLUGIN);
-        Optional<BukkitDataType<T>> opType = view.getString(BukkitData.TYPE).flatMap(typeName -> BukkitDataTypes.TYPES.get().parallelStream().filter(type -> type.typeName().equals(typeName)).findAny().map(t -> (BukkitDataType<T>) t));
+        Optional<BukkitDataType<T>> opType = view.getString(BukkitData.TYPE).flatMap(typeName -> BukkitDataTypes.TYPES.values().parallelStream().filter(type -> type.typeName().equals(typeName)).findAny().map(t -> (BukkitDataType<T>) t));
 
         if (opType.isEmpty() || opPath.isEmpty() || opPlugin.isEmpty()) {
             return Optional.empty();

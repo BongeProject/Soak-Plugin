@@ -8,13 +8,13 @@ import org.soak.generate.bukkit.MaterialList;
 import org.soak.utils.SnapshotHelper;
 import org.soak.wrapper.inventory.meta.*;
 import org.spongepowered.api.data.Keys;
-import org.spongepowered.api.data.value.ValueContainer;
+import org.spongepowered.api.item.ItemRarities;
+import org.spongepowered.api.item.ItemRarity;
 import org.spongepowered.api.item.ItemType;
 import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.item.inventory.ItemStackLike;
 import org.spongepowered.api.item.inventory.ItemStackSnapshot;
-import org.spongepowered.api.tag.ItemTypeTags;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
@@ -23,6 +23,29 @@ import java.util.Optional;
 import java.util.function.Function;
 
 public class SoakItemStackMap {
+
+    public static org.bukkit.inventory.ItemRarity toBukkit(ItemRarity rarity) {
+        if (rarity.equals(ItemRarities.COMMON.get())) {
+            return org.bukkit.inventory.ItemRarity.COMMON;
+        }
+        if (rarity.equals(ItemRarities.EPIC.get())) {
+            return org.bukkit.inventory.ItemRarity.EPIC;
+        }
+        if (rarity.equals(ItemRarities.RARE.get())) {
+            return org.bukkit.inventory.ItemRarity.RARE;
+        }
+        return org.bukkit.inventory.ItemRarity.UNCOMMON;
+    }
+
+    public static ItemRarity toSponge(org.bukkit.inventory.ItemRarity rarity) {
+        return switch (rarity) {
+            case COMMON -> ItemRarities.COMMON.get();
+            case UNCOMMON -> ItemRarities.UNCOMMON.get();
+            case RARE -> ItemRarities.RARE.get();
+            case EPIC -> ItemRarities.EPIC.get();
+            default -> throw new IllegalArgumentException("Unknown mapping from " + rarity.name());
+        };
+    }
 
     public static org.bukkit.inventory.ItemStack toBukkit(@NotNull ItemStack stack) {
         return toBukkit(stack.type(), stack.quantity(), stack);
@@ -103,7 +126,7 @@ public class SoakItemStackMap {
 
     public static AbstractItemMeta toBukkitMeta(ItemStackLike stack, @Nullable Class<? extends ItemMeta> publicClass) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         var attempt = toBukkitMeta(stack);
-        if(publicClass == null || publicClass.isInstance(attempt)){
+        if (publicClass == null || publicClass.isInstance(attempt)) {
             return attempt;
         }
 
@@ -119,6 +142,9 @@ public class SoakItemStackMap {
         }
         if (container.supports(Keys.FIREWORK_EFFECTS)) {
             return new SoakFireworkEffectMeta(container);
+        }
+        if (container.supports(Keys.REPAIR_COST)) {
+            return new SoakRepairable(container);
         }
         if (type.equals(ItemTypes.PLAYER_HEAD.get()) || container.supports(Keys.SKIN_PROFILE_PROPERTY)) {
             return new SoakSkullMeta(container);

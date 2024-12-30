@@ -4,8 +4,6 @@ import com.destroystokyo.paper.Namespaced;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.md_5.bungee.api.chat.BaseComponent;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
@@ -30,18 +28,15 @@ import org.soak.map.SoakMessageMap;
 import org.soak.map.item.SoakEnchantmentTypeMap;
 import org.soak.map.item.SoakItemFlagMap;
 import org.soak.map.item.SoakItemStackMap;
-import org.soak.plugin.SoakManager;
+import org.soak.wrapper.inventory.meta.tool.SoakToolComponent;
 import org.soak.wrapper.persistence.SoakImmutablePersistentDataContainer;
 import org.soak.wrapper.persistence.SoakMutablePersistentDataContainer;
-import org.spongepowered.api.ResourceKey;
 import org.spongepowered.api.data.DataHolder;
 import org.spongepowered.api.data.Key;
 import org.spongepowered.api.data.Keys;
 import org.spongepowered.api.data.value.ListValue;
 import org.spongepowered.api.data.value.SetValue;
 import org.spongepowered.api.data.value.Value;
-import org.spongepowered.api.item.ItemType;
-import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.item.enchantment.EnchantmentType;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.item.inventory.ItemStackLike;
@@ -64,49 +59,7 @@ public abstract class AbstractItemMeta implements ItemMeta, Damageable {
     Required for ConfigurationSerializable
      */
     public static ItemMeta deserialize(Map<String, Object> values) {
-        ItemStack.Builder itemStackBuilder = ItemStack.builder();
-
-        values.forEach((key, value) -> {
-            switch (key) {
-                case "id" -> {
-                    ItemType type = ItemTypes.registry().findValue(ResourceKey.resolve((String) value)).orElseThrow(() -> new IllegalArgumentException("Unknown ItemType of " + value));
-                    itemStackBuilder.itemType(type);
-                }
-                case "count" -> itemStackBuilder.quantity((int) value);
-                case "ContentVersion" -> {
-                    if (((Integer) value) == 3) {
-                        return;
-                    }
-                    SoakManager.getManager().getLogger().error("Unable to read ContentVersion of " + value + " -> Attempting anyway");
-                }
-                case "lore" -> {
-                    List<String> lore = (List<String>) value;
-                    List<Component> componentLore = lore.stream().map(l -> (Component) LegacyComponentSerializer.legacySection().deserialize(l)).toList();
-                    itemStackBuilder.add(Keys.LORE, componentLore);
-                }
-                case "display-name" -> {
-                    String jsonStringComponent = (String) value;
-                    Component component;
-                    if (jsonStringComponent.startsWith("{")) {
-                        try {
-                            component = GsonComponentSerializer.gson().deserialize(jsonStringComponent);
-                        } catch (Throwable e) {
-                            SoakManager.getManager().getLogger().error("Could not read json of " + jsonStringComponent, e);
-                            return;
-                        }
-                    } else {
-                        component = LegacyComponentSerializer.legacySection().deserialize(jsonStringComponent);
-                    }
-                    itemStackBuilder.add(Keys.DISPLAY_NAME, component);
-
-                }
-                default ->
-                        SoakManager.getManager().getLogger().error("Unknown Item Deserialize key of -> " + key + ": (" + value.getClass().getSimpleName() + ") " + value);
-            }
-
-
-        });
-        return SoakItemStackMap.toBukkitMeta(itemStackBuilder.build());
+        return ItemMetaSerializer.deserialize(values);
     }
 
     public boolean isSnapshot() {
@@ -156,7 +109,7 @@ public abstract class AbstractItemMeta implements ItemMeta, Damageable {
         return this.container.asImmutable();
     }
 
-    protected <T> void set(@NotNull Key<Value<T>> key, @Nullable T value) throws RuntimeException {
+    public <T> void set(@NotNull Key<Value<T>> key, @Nullable T value) throws RuntimeException {
         if (value == null) {
             remove(key);
             return;
@@ -174,7 +127,7 @@ public abstract class AbstractItemMeta implements ItemMeta, Damageable {
         this.container = opStack.get();
     }
 
-    protected <T> void setList(@NotNull Key<ListValue<T>> key, @Nullable List<T> value) {
+    public <T> void setList(@NotNull Key<ListValue<T>> key, @Nullable List<T> value) {
         if (value == null) {
             remove(key);
             return;
@@ -601,14 +554,7 @@ public abstract class AbstractItemMeta implements ItemMeta, Damageable {
 
     @Override
     public @NotNull Map<String, Object> serialize() {
-        var container = this.asSnapshot();
-        return container
-                .toContainer()
-                .values(true)
-                .entrySet()
-                .stream()
-                .map(entry -> Map.entry(entry.getKey().asString('.'), entry.getValue()))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        return ItemMetaSerializer.serialize(this);
     }
 
     @Override
@@ -669,7 +615,7 @@ public abstract class AbstractItemMeta implements ItemMeta, Damageable {
 
     @Override
     public void setMaxDamage(@Nullable Integer integer) {
-        throw NotImplementedException.createByLazy(ItemMeta.class, "setMaxDamage", Integer.class);
+        set(Keys.MAX_DURABILITY, integer);
     }
 
     public void manipulate(Function<ItemStackLike, ItemStackLike> to) {
@@ -762,17 +708,17 @@ public abstract class AbstractItemMeta implements ItemMeta, Damageable {
 
     @Override
     public boolean hasRarity() {
-        throw NotImplementedException.createByLazy(ItemMeta.class, "hasRarity");
+        return this.container.get(Keys.ITEM_RARITY).isPresent();
     }
 
     @Override
     public @NotNull ItemRarity getRarity() {
-        throw NotImplementedException.createByLazy(ItemMeta.class, "getRarity");
+        return this.container.get(Keys.ITEM_RARITY).map(SoakItemStackMap::toBukkit).orElseThrow();
     }
 
     @Override
     public void setRarity(@Nullable ItemRarity itemRarity) {
-        throw NotImplementedException.createByLazy(ItemMeta.class, "setRarity", ItemRarity.class);
+        set(Keys.ITEM_RARITY, itemRarity == null ? null : SoakItemStackMap.toSponge(itemRarity));
     }
 
     @Override
@@ -797,7 +743,7 @@ public abstract class AbstractItemMeta implements ItemMeta, Damageable {
 
     @Override
     public @NotNull ToolComponent getTool() {
-        throw NotImplementedException.createByLazy(ItemMeta.class, "getTool", ToolComponent.class);
+        return new SoakToolComponent(this);
     }
 
     @Override

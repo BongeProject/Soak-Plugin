@@ -1,0 +1,36 @@
+plugins {
+    id 'java'
+}
+
+group = 'org.soak'
+version = '1.21.1.2412221049'
+
+
+repositories {
+    mavenCentral()
+    maven {
+        url "https://repo.papermc.io/repository/maven-public"
+    }
+}
+
+dependencies {
+    implementation project(":Wrapper")
+    implementation 'io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT'
+    implementation 'org.spongepowered:spongeapi:' + property("SPONGE_VERSION")
+
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21;
+    targetCompatibility = JavaVersion.VERSION_21;
+}
+
+jar {
+    archiveFileName = "NMSBounce.jar"
+}
+
+test {
+    useJUnitPlatform()
+}

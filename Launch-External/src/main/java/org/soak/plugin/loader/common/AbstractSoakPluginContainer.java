@@ -5,6 +5,7 @@ import org.apache.logging.log4j.Logger;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.soak.plugin.SoakPluginContainer;
+import org.spongepowered.api.event.Order;
 import org.spongepowered.plugin.PluginContainer;
 import org.spongepowered.plugin.metadata.PluginMetadata;
 
@@ -22,14 +23,14 @@ public class AbstractSoakPluginContainer implements SoakPluginContainer {
     private final JavaPlugin plugin;
     private final SoakPluginWrapper mainInstance;
 
-    public AbstractSoakPluginContainer(File bukkitPluginFile, JavaPlugin plugin) {
+    public AbstractSoakPluginContainer(File bukkitPluginFile, JavaPlugin plugin, Order order) {
         this.bukkitPluginFile = bukkitPluginFile;
         this.plugin = plugin;
         this.logger = LogManager.getLogger(plugin.getName());
         this.pluginMetadata = SoakPluginMetadata.fromPlugin(plugin);
 
         //temp
-        this.mainInstance = new SoakPluginWrapper(this);
+        this.mainInstance = new SoakPluginWrapper(this, order);
     }
 
     public File getPluginFile() {

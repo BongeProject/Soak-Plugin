@@ -8,7 +8,9 @@ import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.NotNull;
 import org.mosestream.MoseStream;
+import org.soak.NMSBounceLoader;
 import org.soak.WrapperManager;
 import org.soak.commands.soak.SoakCommand;
 import org.soak.config.SoakConfiguration;
@@ -23,12 +25,13 @@ import org.soak.plugin.external.SoakConfig;
 import org.soak.plugin.loader.Locator;
 import org.soak.plugin.loader.common.AbstractSoakPluginContainer;
 import org.soak.plugin.loader.common.SoakPluginInjector;
+import org.soak.plugin.paper.loader.SoakPluginClassLoader;
 import org.soak.utils.RegisterUtils;
 import org.soak.utils.SoakMemoryStore;
 import org.soak.utils.log.CustomLoggerFormat;
 import org.soak.wrapper.SoakServer;
 import org.soak.wrapper.plugin.SoakPluginManager;
-import org.soak.wrapper.v1_19_R4.NMSBounceSoakServer;
+import org.soak.wrapper.v1_21_R2.NMSBounceSoakServer;
 import org.spongepowered.api.Server;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.Command;
@@ -43,6 +46,7 @@ import org.spongepowered.api.item.inventory.ItemStackSnapshot;
 import org.spongepowered.configurate.ConfigurateException;
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 import org.spongepowered.plugin.PluginContainer;
+import org.spongepowered.plugin.metadata.model.PluginDependency;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -50,9 +54,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.TreeSet;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.jar.JarFile;
 import java.util.logging.ConsoleHandler;
@@ -71,7 +75,31 @@ public class SoakPlugin implements SoakExternalManager, WrapperManager {
     private final SoakServerProperties serverProperties = new SoakServerProperties();
     private final ConsoleHandler consoleHandler = new ConsoleHandler();
     private final int generatedClassesCount = 2;
-    private final Collection<SoakPluginContainer> loadedPlugins = new ArrayList<>();
+    private final Collection<SoakPluginContainer> loadedPlugins = new TreeSet<>((plugin, compare) -> {
+        var opDepends = plugin.metadata().dependencies().stream().filter(p -> p.id().equals(compare.metadata().id())).findAny();
+        if (opDepends.isPresent()) {
+            Integer result = switch (opDepends.get().loadOrder()) {
+                case PluginDependency.LoadOrder.AFTER -> 1;
+                case PluginDependency.LoadOrder.BEFORE -> -1;
+                default -> null;
+            };
+            if (result != null) {
+                return result;
+            }
+        }
+        opDepends = compare.metadata().dependencies().stream().filter(p -> p.id().equals(plugin.metadata().id())).findAny();
+        if (opDepends.isPresent()) {
+            Integer result = switch (opDepends.get().loadOrder()) {
+                case PluginDependency.LoadOrder.AFTER -> 1;
+                case PluginDependency.LoadOrder.BEFORE -> -1;
+                default -> null;
+            };
+            if (result != null) {
+                return result;
+            }
+        }
+        return 0;
+    });
 
     @Inject
     public SoakPlugin(PluginContainer pluginContainer, Logger logger) {
@@ -95,6 +123,18 @@ public class SoakPlugin implements SoakExternalManager, WrapperManager {
 
     public static SoakServer server() {
         return (SoakServer) Bukkit.getServer();
+    }
+
+    private boolean hasDependency(Plugin plugin) {
+        String id = plugin.getName().toLowerCase();
+        return this
+                .loadedPlugins
+                .stream()
+                .anyMatch(pluginContainer -> pluginContainer
+                        .metadata()
+                        .dependencies()
+                        .stream()
+                        .anyMatch(dependency -> dependency.id().equals(id)));
     }
 
     @Listener
@@ -150,6 +190,15 @@ public class SoakPlugin implements SoakExternalManager, WrapperManager {
     @Override
     public ArtifactVersion getVersion() {
         return this.container.metadata().version();
+    }
+
+    @Override
+    public @NotNull SoakPluginClassLoader getSoakClassLoader(@NotNull SoakPluginContainer container) {
+        var classLoader = SoakPlugin.server().getSoakPluginManager().getContext(container.getBukkitInstance()).loader();
+        if (classLoader == null) {
+            throw new IllegalStateException("SoakPluginContainer has not been registered with a classloader");
+        }
+        return classLoader;
     }
 
     public SoakMemoryStore getMemoryStore() {
@@ -269,6 +318,18 @@ public class SoakPlugin implements SoakExternalManager, WrapperManager {
             }
         }
 
+        var loader = NMSBounceLoader.getLoader();
+        if (loader.hasNMSBounce()) {
+            try {
+                loader.extractNmsBounce();
+                loader.loadNMSBounce();
+            } catch (Throwable e) {
+                this.logger.warn("NMSBounce not active. Bukkit plugins wont be able to access NMS", e);
+            }
+        } else {
+            this.logger.warn("NMSBounce not active. Bukkit plugins wont be able to access NMS");
+        }
+
         this.consoleHandler.setFormatter(new CustomLoggerFormat());
 
         SoakServer server = new NMSBounceSoakServer(Sponge::server);
@@ -324,11 +385,12 @@ public class SoakPlugin implements SoakExternalManager, WrapperManager {
                 continue;
             }
 
-            SoakPluginContainer container = new AbstractSoakPluginContainer(file, plugin);
+            SoakPluginContainer container = new AbstractSoakPluginContainer(file, plugin, hasDependency(plugin) ? Order.EARLY : Order.DEFAULT);
             loadedPlugins.add(container);
             Sponge.eventManager().registerListeners(container, container.instance(), MethodHandles.lookup());
         }
         SoakPluginInjector.injectPlugins(loadedPlugins);
+
         this.getPlugins().forEach(container -> ((AbstractSoakPluginContainer) container).instance().onPluginsConstructed());
         if (late) {
             this.getPlugins().forEach(container -> ((AbstractSoakPluginContainer) container).getBukkitInstance().onLoad());
@@ -357,4 +419,5 @@ public class SoakPlugin implements SoakExternalManager, WrapperManager {
     public SoakConfig getConfig() {
         return this.configuration;
     }
+
 }

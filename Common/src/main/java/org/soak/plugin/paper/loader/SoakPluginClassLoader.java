@@ -12,6 +12,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.UnmodifiableView;
+import org.soak.NMSBounceLoader;
 import org.soak.plugin.SoakManager;
 import org.soak.plugin.SoakPluginContainer;
 import org.soak.plugin.paper.meta.SoakPluginMeta;
@@ -22,13 +24,17 @@ import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.concurrent.LinkedTransferQueue;
 import java.util.function.Supplier;
 import java.util.zip.ZipFile;
 
 @ApiStatus.Internal
-public class SoakPluginClassLoader extends URLClassLoader implements ConfiguredPluginClassLoader {
+public class SoakPluginClassLoader extends URLClassLoader implements ConfiguredPluginClassLoader, FoundClassLoader {
 
     private final PluginProviderContext context;
+    private final Collection<Class<?>> classes = new LinkedTransferQueue<>();
 
     public SoakPluginClassLoader(PluginProviderContext context) throws MalformedURLException {
         super(new URL[]{context.getPluginSource().toUri().toURL()}, SoakPluginClassLoader.class.getClassLoader());
@@ -105,19 +111,55 @@ public class SoakPluginClassLoader extends URLClassLoader implements ConfiguredP
     }
 
     @Override
-    protected Class<?> findClass(String name) throws ClassNotFoundException {
+    protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+        var clazz = super.loadClass(name, resolve);
+        this.classes.add(clazz);
+        return clazz;
+    }
+
+    @Override
+    public Class<?> findClass(String name) throws ClassNotFoundException {
         var generatedClasses = SoakManager.getManager().generatedClasses();
         var foundGeneratedClass = generatedClasses.stream().filter(clazz -> clazz.getName().equals(name)).findAny();
         if (foundGeneratedClass.isPresent()) {
             return foundGeneratedClass.get();
         }
+
+        if (name.contains(".vault.")) {
+            System.out.println("Found");
+        }
+
+        var opOtherClass = SoakManager
+                .getManager()
+                .getBukkitSoakContainers()
+                .flatMap(spc -> SoakManager
+                        .getManager()
+                        .getSoakClassLoader(spc)
+                        .getClasses()
+                        .stream())
+                .filter(clazz -> clazz.getTypeName().equals(name))
+                .findAny();
+
+        if (opOtherClass.isPresent()) {
+            return opOtherClass.get();
+        }
         try {
             return super.findClass(name);
         } catch (ClassNotFoundException e) {
             //allow other class loaders to supply there solution if possible
+
+            var opClass = NMSBounceLoader.getLoader().classes().stream().filter(clazz -> clazz.getName().equals(name)).findAny();
+            if (opClass.isPresent()) {
+                return opClass.get();
+            }
             throw e;
             //find a solution for NMS
         }
+    }
+
+    @Override
+    public @NotNull @UnmodifiableView Collection<Class<?>> getClasses() {
+        return Collections.unmodifiableCollection(this.classes);
     }
 
     @Override

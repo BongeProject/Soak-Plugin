@@ -3,8 +3,6 @@ package org.soak.generate.bukkit;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.implementation.MethodCall;
-import net.bytebuddy.implementation.bytecode.assign.Assigner;
-import net.bytebuddy.jar.asm.Opcodes;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.ComponentLike;
 import net.kyori.adventure.text.TranslatableComponent;
@@ -28,12 +26,9 @@ import org.spongepowered.api.data.Keys;
 import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.registry.RegistryTypes;
 import org.spongepowered.api.state.StateContainer;
-import org.spongepowered.api.tag.BlockTypeTags;
-import org.spongepowered.api.tag.ItemTypeTags;
 
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 public class MaterialList {
 
@@ -101,6 +96,7 @@ public class MaterialList {
         classCreator = buildIsTransparent(classCreator);
 
         classCreator = buildStaticMatchMaterial(classCreator);
+        classCreator = buildStaticGetMaterial(classCreator);
         return classCreator.implement(Keyed.class, Translatable.class, net.kyori.adventure.translation.Translatable.class).make();
 
     }
@@ -208,6 +204,10 @@ public class MaterialList {
         return CommonGenerationCode.callStaticMethodReturnSelf(MaterialList.class, builder, "matchMaterial", MethodCall::withAllArguments, String.class);
     }
 
+    private static DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition<? extends Enum<?>> buildStaticGetMaterial(DynamicType.Builder<? extends Enum<?>> builder) throws NoSuchMethodException {
+        return CommonGenerationCode.callStaticMethodReturnSelf(MaterialList.class, builder, "getMaterial", MethodCall::withAllArguments, String.class);
+    }
+
     public static Optional<org.spongepowered.api.block.BlockType> getBlockType(Enum<?> enumEntry) {
         return Optional.ofNullable(BLOCK_TYPE_MAP.get(enumEntry.name()));
     }
@@ -268,7 +268,7 @@ public class MaterialList {
     }
 
     public static boolean isTransparent(Enum<?> enumEntry) {
-        if(isAir(enumEntry)){
+        if (isAir(enumEntry)) {
             return true;
         }
         return getItemType(enumEntry).map(type -> type.equals(ItemTypes.GLASS_PANE.get()) || type.equals(ItemTypes.GLASS.get())).orElse(false);
@@ -314,6 +314,10 @@ public class MaterialList {
 
         var opItemType = ItemTypes.registry().findValue(key);
         return opItemType.<Enum<?>>map(MaterialList::value).orElse(null);
+    }
+
+    public static @Nullable Enum<?> getMaterial(String name) {
+        return values().stream().filter(e -> e.name().equalsIgnoreCase(name)).findAny().orElse(null);
     }
 
     public static Enum<?> matchMaterial(String name) {
