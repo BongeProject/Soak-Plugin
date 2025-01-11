@@ -7,12 +7,15 @@ version = '1.0.0'
 
 repositories {
     mavenCentral()
+    maven {
+        url "https://hub.spigotmc.org/nexus/content/repositories/snapshots"
+    }
 }
 
 java {
     toolchain {
-        targetCompatibility = JavaVersion.VERSION_17
-        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.valueOf("VERSION_" + property("JAVA_VERSION"))
+        sourceCompatibility = JavaVersion.valueOf("VERSION_" + property("JAVA_VERSION"))
     }
 }
 
@@ -21,9 +24,11 @@ dependencies {
     implementation project(":Launch-Common")
     implementation project(":Common")
     implementation project(":Wrapper")
-    implementation project(":bukkit-api")
 
-    implementation 'org.spongepowered:spongeapi:10.0.0'
+    implementation 'org.spongepowered:spongeapi:' + property("SPONGE_VERSION")
+
+    implementation 'io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT'
+
 
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'

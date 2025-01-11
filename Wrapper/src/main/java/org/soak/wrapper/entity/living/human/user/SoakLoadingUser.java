@@ -1,10 +1,8 @@
 package org.soak.wrapper.entity.living.human.user;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.OfflinePlayer;
-import org.bukkit.Statistic;
+import io.papermc.paper.persistence.PersistentDataContainerView;
+import org.bukkit.*;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -16,10 +14,14 @@ import org.soak.wrapper.profile.SoakPlayerProfile;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.profile.GameProfile;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
+@Deprecated(forRemoval = true)
 public class SoakLoadingUser implements OfflinePlayer {
 
     private final GameProfile profile;
@@ -49,6 +51,11 @@ public class SoakLoadingUser implements OfflinePlayer {
     }
 
     @Override
+    public boolean isConnected() {
+        throw NotImplementedException.createByLazy(OfflinePlayer.class, "isConnected");
+    }
+
+    @Override
     public @Nullable String getName() {
         return profile.name().orElse(null);
     }
@@ -66,6 +73,21 @@ public class SoakLoadingUser implements OfflinePlayer {
     @Override
     public boolean isBanned() {
         throw NotImplementedException.createByLazy(OfflinePlayer.class, "isBanned");
+    }
+
+    @Override
+    public <E extends BanEntry<? super PlayerProfile>> @Nullable E ban(@Nullable String s, @Nullable Date date, @Nullable String s1) {
+        throw NotImplementedException.createByLazy(OfflinePlayer.class, "ban", String.class, Date.class, String.class);
+    }
+
+    @Override
+    public <E extends BanEntry<? super PlayerProfile>> @Nullable E ban(@Nullable String s, @Nullable Instant instant, @Nullable String s1) {
+              throw NotImplementedException.createByLazy(OfflinePlayer.class, "ban", String.class, Instant.class, String.class);
+    }
+
+    @Override
+    public <E extends BanEntry<? super PlayerProfile>> @Nullable E ban(@Nullable String s, @Nullable Duration duration, @Nullable String s1) {
+        throw NotImplementedException.createByLazy(OfflinePlayer.class, "ban", String.class, Duration.class, String.class);
     }
 
     @Override
@@ -118,6 +140,11 @@ public class SoakLoadingUser implements OfflinePlayer {
     @Override
     public long getLastSeen() {
         return this.getLastPlayed();
+    }
+
+    @Override
+    public @Nullable Location getRespawnLocation() {
+        throw NotImplementedException.createByLazy(OfflinePlayer.class, "getRespawnLocation");
     }
 
     @Override
@@ -217,6 +244,16 @@ public class SoakLoadingUser implements OfflinePlayer {
     @Override
     public @Nullable Location getLastDeathLocation() {
         throw NotImplementedException.createByLazy(SoakLoadedUser.class, "getLastDeathLocation");
+    }
+
+    @Override
+    public @Nullable Location getLocation() {
+        throw NotImplementedException.createByLazy(OfflinePlayer.class, "getLocation");
+    }
+
+    @Override
+    public @NotNull PersistentDataContainerView getPersistentDataContainer() {
+        throw NotImplementedException.createByLazy(OfflinePlayer.class, "getPersistentDataContainer");
     }
 
     @Override

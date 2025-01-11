@@ -8,7 +8,7 @@
     {
       "id": "soak",
       "name": "Soak",
-      "version": "0.0.1",
+      "version": "%%pluginVersion%%",
       "entrypoint": "org.soak.plugin.SoakPlugin",
       "description": "Run Bukkit plugins on SpongeAPI",
       "contributors": [
@@ -20,7 +20,7 @@
       "dependencies": [
         {
           "id": "spongeapi",
-          "version": "10.0.0",
+          "version": "%%spongeVersion%%",
           "load-order": "after",
           "optional": false
         }

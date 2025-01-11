@@ -1,5 +1,6 @@
 package org.soak.map.event.entity;
 
+import org.bukkit.ExplosionResult;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.event.EventPriority;
@@ -57,11 +58,22 @@ public class SoakEntityExplosionEvent {
         var spongeLocation = event.explosion().serverLocation();
         var bukkitWorld = SoakManager.<WrapperManager>getManager().getMemoryStore().get(event.world());
         var bukkitLocation = new Location(bukkitWorld, spongeLocation.x(), spongeLocation.y(), spongeLocation.z());
-        var blocks = event.affectedLocations().stream().map(loc -> (Block)new SoakBlock(loc)).collect(Collectors.toList());
+        var blocks = event.affectedLocations().stream().map(loc -> (Block) new SoakBlock(loc)).collect(Collectors.toList());
+        var result = result(event);
 
-        var bukkitEvent = new EntityExplodeEvent(bukkitEntity, bukkitLocation, blocks, 0);
+        var bukkitEvent = new EntityExplodeEvent(bukkitEntity, bukkitLocation, blocks, 0, result);
         SoakManager.<WrapperManager>getManager().getServer().getSoakPluginManager().callEvent(this.singleListenerWrapper, bukkitEvent, priority);
 
+    }
+
+    private ExplosionResult result(ExplosionEvent.Detonate event) {
+        if (!event.explosion().shouldBreakBlocks()) {
+            return ExplosionResult.KEEP;
+        }
+        if (event.explosion().randomness() == 0) {
+            return ExplosionResult.DESTROY;
+        }
+        return ExplosionResult.DESTROY_WITH_DECAY;
     }
 
 }

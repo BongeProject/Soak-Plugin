@@ -26,4 +26,6 @@ public interface WrapperManager extends SoakManager {
     SoakServerProperties getServerProperties();
 
     Collection<Command> getBukkitCommands(Plugin plugin);
+
+    boolean shouldMaterialListUseModded();
 }

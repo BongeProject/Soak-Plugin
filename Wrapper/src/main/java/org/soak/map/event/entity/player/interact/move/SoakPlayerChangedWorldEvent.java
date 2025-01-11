@@ -52,7 +52,7 @@ public class SoakPlayerChangedWorldEvent {
         PlayerChangedWorldEvent bukkitEvent = new PlayerChangedWorldEvent(bukkitPlayer, bukkitWorld);
 
         var soakPlugin = singleEventListener.plugin();
-        var soakContainer = SoakManager.getManager().getContainer(soakPlugin);
+        var soakContainer = SoakManager.getManager().getSoakContainer(soakPlugin);
         Sponge.server().scheduler().executor(soakContainer.getTrueContainer()).execute(() -> SoakManager.<WrapperManager>getManager().getServer().getSoakPluginManager().callEvent(singleEventListener, bukkitEvent, priority));
     }
 }

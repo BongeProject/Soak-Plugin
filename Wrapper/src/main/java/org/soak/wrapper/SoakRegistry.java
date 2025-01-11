@@ -10,6 +10,7 @@ import org.spongepowered.api.registry.DefaultedRegistryType;
 
 import java.util.Iterator;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 public class SoakRegistry<SR, BR extends Keyed> implements Registry<BR> {
 
@@ -33,7 +34,17 @@ public class SoakRegistry<SR, BR extends Keyed> implements Registry<BR> {
     }
 
     @Override
+    public @NotNull BR getOrThrow(@NotNull NamespacedKey namespacedKey) {
+        return stream().filter(br -> br.getKey().equals(namespacedKey)).findAny().orElseThrow();
+    }
+
+    @Override
+    public @NotNull Stream<BR> stream() {
+        return registryType.get().stream().map(map);
+    }
+
+    @Override
     public @NotNull Iterator<BR> iterator() {
-        return registryType.get().stream().map(map).iterator();
+        return stream().iterator();
     }
 }

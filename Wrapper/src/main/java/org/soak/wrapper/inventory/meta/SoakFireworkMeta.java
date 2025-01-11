@@ -4,11 +4,13 @@ import org.bukkit.FireworkEffect;
 import org.bukkit.inventory.meta.FireworkMeta;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.soak.exception.NotImplementedException;
 import org.soak.map.SoakFireworkEffectMap;
 import org.spongepowered.api.data.Keys;
 import org.spongepowered.api.data.value.ValueContainer;
 import org.spongepowered.api.entity.projectile.explosive.FireworkRocket;
 import org.spongepowered.api.item.inventory.ItemStack;
+import org.spongepowered.api.item.inventory.ItemStackLike;
 import org.spongepowered.api.item.inventory.ItemStackSnapshot;
 import org.spongepowered.api.util.Ticks;
 
@@ -29,18 +31,23 @@ public class SoakFireworkMeta extends AbstractItemMeta implements FireworkMeta {
         super(stack);
     }
 
-    public SoakFireworkMeta(FireworkRocket entity) {
+    //move to own class
+    /*public SoakFireworkMeta(FireworkRocket entity) {
         super(entity);
-    }
+    }*/
 
-    @Deprecated
-    public SoakFireworkMeta(ValueContainer container) {
+    public SoakFireworkMeta(ItemStackLike container) {
         super(container);
     }
 
     @Override
     public boolean hasEffects() {
         return !this.container.get(Keys.FIREWORK_EFFECTS).orElse(Collections.emptyList()).isEmpty();
+    }
+
+    @Override
+    public boolean hasPower() {
+        throw NotImplementedException.createByLazy(FireworkMeta.class, "hasPower");
     }
 
     @Override
@@ -109,6 +116,6 @@ public class SoakFireworkMeta extends AbstractItemMeta implements FireworkMeta {
 
     @Override
     public @NotNull SoakFireworkMeta clone() {
-        return new SoakFireworkMeta(this.copyToImmutable());
+        return new SoakFireworkMeta(this.container.asImmutable());
     }
 }

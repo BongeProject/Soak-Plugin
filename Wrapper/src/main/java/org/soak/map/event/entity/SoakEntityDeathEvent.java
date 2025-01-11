@@ -6,6 +6,7 @@ import org.soak.WrapperManager;
 import org.soak.map.event.EventSingleListenerWrapper;
 import org.soak.map.item.SoakItemStackMap;
 import org.soak.plugin.SoakManager;
+import org.soak.wrapper.damage.SoakDamageSource;
 import org.soak.wrapper.entity.AbstractEntity;
 import org.soak.wrapper.entity.living.AbstractLivingEntity;
 import org.spongepowered.api.data.Keys;
@@ -13,8 +14,10 @@ import org.spongepowered.api.entity.living.Living;
 import org.spongepowered.api.entity.living.player.server.ServerPlayer;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.Order;
+import org.spongepowered.api.event.cause.entity.damage.source.DamageSource;
 import org.spongepowered.api.event.item.inventory.DropItemEvent;
 import org.spongepowered.api.registry.RegistryTypes;
+import org.spongepowered.api.world.server.ServerWorld;
 
 import java.util.stream.Collectors;
 
@@ -60,6 +63,11 @@ public class SoakEntityDeathEvent {
             return;
         }
         var entity = (AbstractLivingEntity<?>) AbstractEntity.wrap((Living) root);
+        var opSpongeDamageCause = event.cause().first(DamageSource.class);
+        if (opSpongeDamageCause.isEmpty()) {
+            return;
+        }
+        var bukkitDamageCause = new SoakDamageSource(opSpongeDamageCause.get(), (ServerWorld) ((Living) root).world());
         var items = event.entities()
                 .parallelStream()
                 .map(itemEntity -> itemEntity.get(Keys.ITEM_STACK_SNAPSHOT)
@@ -68,7 +76,7 @@ public class SoakEntityDeathEvent {
                 .map(SoakItemStackMap::toBukkit)
                 .collect(Collectors.toList());
         //TODO -> find exp
-        var bukkitEvent = new EntityDeathEvent(entity, items);
+        var bukkitEvent = new EntityDeathEvent(entity, bukkitDamageCause, items);
         SoakManager.<WrapperManager>getManager().getServer().getSoakPluginManager().callEvent(this.singleListenerWrapper, bukkitEvent, priority);
 
         //TODO -> spawn the entity back in if event is cancelled

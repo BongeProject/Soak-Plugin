@@ -1,18 +1,23 @@
+import java.time.Clock
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+
 plugins {
     id("java-library")
 }
 
 group = "org.soak"
+var dateTime = LocalDateTime.now(Clock.systemUTC())
+version = project.property("BUKKIT_VERSION") + "." + dateTime.format(DateTimeFormatter.ofPattern("yyMMddHHmm"))
 
 java {
     toolchain {
-        targetCompatibility = JavaVersion.VERSION_17
-        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_21
+        sourceCompatibility = JavaVersion.VERSION_21
     }
 }
 
 allprojects {
-    version = "1.0.0"
     repositories {
         mavenCentral()
         maven {

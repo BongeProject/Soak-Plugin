@@ -47,8 +47,8 @@ public class SoakPreJoinEvent {
 
 
     public void fireEvent(ServerSideConnectionEvent.Login event, EventPriority priority) {
-        String profileName = event.connection().profile().name().orElse("");
-        UUID uuid = event.connection().profile().uniqueId();
+        String profileName = event.profile().name().orElse("");
+        UUID uuid = event.profile().uniqueId();
         InetAddress address = event.connection().address().getAddress();
 
         AsyncPlayerPreLoginEvent bukkitEvent = new AsyncPlayerPreLoginEvent(profileName, address, uuid);

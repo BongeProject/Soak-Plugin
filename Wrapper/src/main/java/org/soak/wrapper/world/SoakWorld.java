@@ -1,6 +1,7 @@
 package org.soak.wrapper.world;
 
-import com.destroystokyo.paper.HeightmapType;
+import io.papermc.paper.block.fluid.FluidData;
+import io.papermc.paper.math.Position;
 import io.papermc.paper.world.MoonPhase;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.*;
@@ -14,6 +15,7 @@ import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.BlockPopulator;
 import org.bukkit.generator.ChunkGenerator;
+import org.bukkit.generator.structure.GeneratedStructure;
 import org.bukkit.generator.structure.Structure;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.MaterialData;
@@ -27,10 +29,7 @@ import org.jetbrains.annotations.Nullable;
 import org.mose.collection.stream.builder.CollectionStreamBuilder;
 import org.soak.WrapperManager;
 import org.soak.exception.NotImplementedException;
-import org.soak.map.SoakBoundingBox;
-import org.soak.map.SoakLocationMap;
-import org.soak.map.SoakResourceKeyMap;
-import org.soak.map.SoakWorldTypeMap;
+import org.soak.map.*;
 import org.soak.plugin.SoakManager;
 import org.soak.utils.ListMappingUtils;
 import org.soak.utils.single.SoakSingleInstance;
@@ -102,6 +101,39 @@ public class SoakWorld implements World, SoakSingleInstance<org.spongepowered.ap
     }
 
     @Override
+    public boolean isVoidDamageEnabled() {
+        throw NotImplementedException.createByLazy(World.class, "isVoidDamageEnabled");
+    }
+
+    @Override
+    public void setVoidDamageEnabled(boolean b) {
+        throw NotImplementedException.createByLazy(World.class, "setVoidDamageEnabled", boolean.class);
+    }
+
+    @Override
+    public float getVoidDamageAmount() {
+        throw NotImplementedException.createByLazy(World.class, "getVoidDamageAmount");
+    }
+
+    @Override
+    public void setVoidDamageAmount(float v) {
+        throw NotImplementedException.createByLazy(World.class, "setVoidDamageAmount", float.class);
+
+    }
+
+    @Override
+    public double getVoidDamageMinBuildHeightOffset() {
+        throw NotImplementedException.createByLazy(World.class, "setVoidDamageMinBuildHeightOffset");
+
+    }
+
+    @Override
+    public void setVoidDamageMinBuildHeightOffset(double v) {
+        throw NotImplementedException.createByLazy(World.class, "setVoidDamageMinBuildHeightOffset", double.class);
+
+    }
+
+    @Override
     public int getEntityCount() {
         return this.world.entities().size();
     }
@@ -124,6 +156,12 @@ public class SoakWorld implements World, SoakSingleInstance<org.spongepowered.ap
     @Override
     public int getPlayerCount() {
         return this.world.players().size();
+    }
+
+    @Override
+    public boolean hasStructureAt(@NotNull Position position, @NotNull Structure structure) {
+        throw NotImplementedException.createByLazy(World.class, "hasStructureAt", Position.class, Structure.class);
+
     }
 
     @Override
@@ -162,22 +200,18 @@ public class SoakWorld implements World, SoakSingleInstance<org.spongepowered.ap
     }
 
     @Override
+    public <T extends Entity> @NotNull T addEntity(@NotNull T t) {
+        throw NotImplementedException.createByLazy(World.class, "addEntity", Entity.class);
+
+    }
+
+    @Override
     public int getHighestBlockYAt(int arg0, int arg1, @NotNull HeightMap arg2) {
         throw NotImplementedException.createByLazy(World.class,
                 "getHighestBlockYAt",
                 int.class,
                 int.class,
                 HeightMap.class);
-    }
-
-    @Deprecated
-    @Override
-    public int getHighestBlockYAt(int arg0, int arg1, HeightmapType arg2) {
-        throw NotImplementedException.createByLazy(World.class,
-                "getHighestBlockYAt",
-                int.class,
-                int.class,
-                HeightmapType.class);
     }
 
     @Override
@@ -248,17 +282,6 @@ public class SoakWorld implements World, SoakSingleInstance<org.spongepowered.ap
     }
 
     @Override
-    public @NotNull Collection<Entity> getNearbyEntities(@NotNull Location location, double x, double y, double z, @Nullable Predicate<Entity> filter) {
-        throw NotImplementedException.createByLazy(World.class,
-                "getNearbyEntities",
-                Location.class,
-                double.class,
-                double.class,
-                double.class,
-                Predicate.class);
-    }
-
-    @Override
     public @NotNull Collection<Entity> getNearbyEntities(@NotNull Location location, double x, double y, double z) {
         return getNearbyEntities(BoundingBox.of(location, x, y, z));
     }
@@ -269,14 +292,11 @@ public class SoakWorld implements World, SoakSingleInstance<org.spongepowered.ap
     }
 
     @Override
-    public @NotNull Collection<Entity> getNearbyEntities(@NotNull BoundingBox boundingBox, @Nullable Predicate<Entity> filter) {
-        return CollectionStreamBuilder
-                .builder()
-                .collection(this.world.entities(SoakBoundingBox.toSponge(boundingBox)))
-                .map(stream -> stream
-                        .map(entity -> (Entity) AbstractEntity.wrap(entity))
-                        .filter(Objects.requireNonNullElse(filter, entity -> true))
-                ).buildSet();
+    public @NotNull Collection<Entity> getNearbyEntities(@NotNull BoundingBox boundingBox, @Nullable Predicate<? super Entity> predicate) {
+        var spongeBoundingBox = SoakBoundingBoxMap.toSponge(boundingBox);
+        Predicate<org.spongepowered.api.entity.Entity> spongePredicate = (entity) -> predicate == null || predicate.test(AbstractEntity.wrap(entity));
+        var spongeCollection = this.sponge().entities(spongeBoundingBox, spongePredicate);
+        return CollectionStreamBuilder.builder().collection(spongeCollection).basicMap(entity -> (Entity)AbstractEntity.wrap(entity)).buildSet();
     }
 
     @Override
@@ -322,6 +342,11 @@ public class SoakWorld implements World, SoakSingleInstance<org.spongepowered.ap
                 Location.class,
                 float.class,
                 boolean.class);
+    }
+
+    @Override
+    public boolean createExplosion(@Nullable Entity entity, @NotNull Location location, float v, boolean b, boolean b1, boolean b2) {
+        throw NotImplementedException.createByLazy(World.class, "setVoidDamageAmount", Entity.class, Location.class, float.class, boolean.class, boolean.class, boolean.class);
     }
 
     @Override
@@ -393,22 +418,23 @@ public class SoakWorld implements World, SoakSingleInstance<org.spongepowered.ap
     }
 
     @Override
-    public <T extends Entity> @NotNull T spawn(@NotNull Location location, @NotNull Class<T> clazz, @Nullable Consumer<T> function, @NotNull CreatureSpawnEvent.SpawnReason reason) throws IllegalArgumentException {
+    public <T extends Entity> @NotNull T spawn(@NotNull Location location, @NotNull Class<T> aClass, java.util.function.@Nullable Consumer<? super T> consumer, CreatureSpawnEvent.SpawnReason spawnReason) throws IllegalArgumentException {
         var bukkitType = Arrays.stream(EntityType.values())
-                .filter(type -> type.getEntityClass().getName().equals(clazz.getName()))
+                .filter(type -> type.getEntityClass().getName().equals(aClass.getName()))
                 .findAny()
-                .orElseThrow(() -> new RuntimeException("EntityType could not be found for class " + clazz.getName()));
+                .orElseThrow(() -> new RuntimeException("EntityType could not be found for class " + aClass.getName()));
         var spongeEntity = this.sponge()
-                .createEntity(bukkitType.asSponge(), new Vector3d(location.getX(), location.getY(), location.getZ()));
+                .createEntity(SoakEntityMap.toSponge(bukkitType), new Vector3d(location.getX(), location.getY(), location.getZ()));
         var bukkitEntity = (T) AbstractEntity.wrap(spongeEntity);
-        function.accept(bukkitEntity);
+        consumer.accept(bukkitEntity);
         this.sponge().spawnEntity(spongeEntity);
         return bukkitEntity;
     }
 
     @Override
-    public <T extends Entity> @NotNull T spawn(@NotNull Location location, @NotNull Class<T> aClass, boolean b, @Nullable Consumer<T> consumer) throws IllegalArgumentException {
-        throw NotImplementedException.createByLazy(World.class, "spawn", Location.class, Class.class, boolean.class, Consumer.class);
+    public <T extends Entity> @NotNull T spawn(@NotNull Location location, @NotNull Class<T> aClass, boolean b, java.util.function.@Nullable Consumer<? super T> consumer) throws IllegalArgumentException {
+        throw NotImplementedException.createByLazy(World.class, "spawn", Location.class, Class.class, boolean.class, java.util.function.Consumer.class);
+
     }
 
     @Override
@@ -612,7 +638,7 @@ public class SoakWorld implements World, SoakSingleInstance<org.spongepowered.ap
 
     @Override
     public boolean hasCollisionsIn(@NotNull BoundingBox boundingBox) {
-        return false;
+        throw NotImplementedException.createByLazy(World.class, "hasCollisionIn", BoundingBox.class);
     }
 
     @Override
@@ -686,6 +712,16 @@ public class SoakWorld implements World, SoakSingleInstance<org.spongepowered.ap
     }
 
     @Override
+    public @NotNull Collection<Player> getPlayersSeeingChunk(@NotNull Chunk chunk) {
+        throw NotImplementedException.createByLazy(World.class, "getPlayersSeeingChunk", Chunk.class);
+    }
+
+    @Override
+    public @NotNull Collection<Player> getPlayersSeeingChunk(int i, int i1) {
+        throw NotImplementedException.createByLazy(World.class, "getPlayersSeeingChunk", int.class, int.class);
+    }
+
+    @Override
     public boolean isChunkForceLoaded(int arg0, int arg1) {
         throw NotImplementedException.createByLazy(World.class, "isChunkForceLoaded", int.class, int.class);
     }
@@ -738,17 +774,18 @@ public class SoakWorld implements World, SoakSingleInstance<org.spongepowered.ap
     }
 
     @Override
+    public @NotNull Collection<Chunk> getIntersectingChunks(@NotNull BoundingBox boundingBox) {
+        throw NotImplementedException.createByLazy(World.class, "getIntersectingChunks", BoundingBox.class);
+    }
+
+    @Override
     public @NotNull Item dropItem(@NotNull Location location, @NotNull ItemStack item) {
         throw NotImplementedException.createByLazy(World.class, "dropItem", Location.class, ItemStack.class);
     }
 
     @Override
-    public @NotNull Item dropItem(@NotNull Location location, @NotNull ItemStack item, @Nullable Consumer<Item> function) {
-        throw NotImplementedException.createByLazy(World.class,
-                "dropItem",
-                Location.class,
-                ItemStack.class,
-                Consumer.class);
+    public @NotNull Item dropItem(@NotNull Location location, @NotNull ItemStack itemStack, java.util.function.@Nullable Consumer<? super Item> consumer) {
+        throw NotImplementedException.createByLazy(World.class, "dropItem", Location.class, ItemStack.class, java.util.function.Consumer.class);
     }
 
     @Override
@@ -757,12 +794,9 @@ public class SoakWorld implements World, SoakSingleInstance<org.spongepowered.ap
     }
 
     @Override
-    public @NotNull Item dropItemNaturally(@NotNull Location arg0, @NotNull ItemStack arg1, Consumer arg2) {
-        throw NotImplementedException.createByLazy(World.class,
-                "dropItemNaturally",
-                Location.class,
-                ItemStack.class,
-                Consumer.class);
+    public @NotNull Item dropItemNaturally(@NotNull Location location, @NotNull ItemStack itemStack, java.util.function.@Nullable Consumer<? super Item> consumer) {
+        throw NotImplementedException.createByLazy(World.class, "dropItemNaturally", Location.class, ItemStack.class, Consumer.class);
+
     }
 
     @Override
@@ -802,7 +836,7 @@ public class SoakWorld implements World, SoakSingleInstance<org.spongepowered.ap
 
     @Override
     public @NotNull Entity spawnEntity(@NotNull Location arg0, @NotNull EntityType arg1) {
-        var type = arg1.asSponge();
+        var type = SoakEntityMap.toSponge(arg1);
         var entity = this.world.createEntity(type, new Vector3d(arg0.getX(), arg0.getY(), arg0.getZ()));
         this.world.spawnEntity(entity);
         return AbstractEntity.wrap(entity);
@@ -841,37 +875,37 @@ public class SoakWorld implements World, SoakSingleInstance<org.spongepowered.ap
         throw NotImplementedException.createByLazy(World.class, "findLightningTarget", Location.class);
     }
 
-    private <T extends Entity> List<T> generateEntityList(Function<Stream<? extends org.spongepowered.api.entity.Entity>, Stream<org.spongepowered.api.entity.Entity>> filter){
+    private <T extends Entity> List<T> generateEntityList(Function<Stream<? extends org.spongepowered.api.entity.Entity>, Stream<org.spongepowered.api.entity.Entity>> filter) {
         Supplier<Stream<org.spongepowered.api.entity.Entity>> spongeEntities = () -> filter.apply(this.world.entities().stream());
-        var collectionBuilder = CollectionStreamBuilder.builder().stream(spongeEntities).basicMap(spongeEntity -> (T)AbstractEntity.wrap(spongeEntity));
-        return ListMappingUtils.fromStream(collectionBuilder, () -> this.world.entities().stream().map(e -> (org.spongepowered.api.entity.Entity)e), (spongeEntity, soakEntity) -> ((AbstractEntity<?>)soakEntity).spongeEntity().equals(spongeEntity), Comparator.comparing(entity -> entity.uniqueId().toString())).buildList();
+        var collectionBuilder = CollectionStreamBuilder.builder().stream(spongeEntities).basicMap(spongeEntity -> (T) AbstractEntity.wrap(spongeEntity));
+        return ListMappingUtils.fromStream(collectionBuilder, () -> this.world.entities().stream().map(e -> (org.spongepowered.api.entity.Entity) e), (spongeEntity, soakEntity) -> ((AbstractEntity<?>) soakEntity).spongeEntity().equals(spongeEntity), Comparator.comparing(entity -> entity.uniqueId().toString())).buildList();
     }
 
-    private <T extends Entity> List<T> generateEntityListAdvanced(Function<Stream<org.spongepowered.api.entity.Entity>, Stream<T>> advancedMap){
+    private <T extends Entity> List<T> generateEntityListAdvanced(Function<Stream<org.spongepowered.api.entity.Entity>, Stream<T>> advancedMap) {
         Supplier<Stream<org.spongepowered.api.entity.Entity>> spongeEntities = () -> this.world.entities().stream().map(t -> t);
         var collectionBuilder = CollectionStreamBuilder.builder().stream(spongeEntities).map(advancedMap);
-        return ListMappingUtils.fromStream(collectionBuilder, () -> this.world.entities().stream().map(e -> (org.spongepowered.api.entity.Entity)e), (spongeEntity, soakEntity) -> ((AbstractEntity<?>)soakEntity).spongeEntity().equals(spongeEntity), Comparator.comparing(entity -> entity.uniqueId().toString())).buildList();
+        return ListMappingUtils.fromStream(collectionBuilder, () -> this.world.entities().stream().map(e -> (org.spongepowered.api.entity.Entity) e), (spongeEntity, soakEntity) -> ((AbstractEntity<?>) soakEntity).spongeEntity().equals(spongeEntity), Comparator.comparing(entity -> entity.uniqueId().toString())).buildList();
     }
 
     @Override
     public @NotNull List<Entity> getEntities() {
-    return generateEntityList(stream -> stream.map(e -> e));
+        return generateEntityList(stream -> stream.map(e -> e));
     }
 
     @Override
     public @NotNull List<LivingEntity> getLivingEntities() {
-        return generateEntityList(stream -> stream.filter(e -> e instanceof Living).map(e -> (Living)e));
+        return generateEntityList(stream -> stream.filter(e -> e instanceof Living).map(e -> (Living) e));
     }
 
     @Override
     public @NotNull <T extends Entity> Collection<T> getEntitiesByClass(@NotNull Class<T> cls) {
-        return generateEntityListAdvanced(stream -> stream.map(AbstractEntity::wrap).filter(cls::isInstance).map(entity -> (T)entity));
+        return generateEntityListAdvanced(stream -> stream.map(AbstractEntity::wrap).filter(cls::isInstance).map(entity -> (T) entity));
     }
 
     @SafeVarargs
     @Override
     public final @NotNull <T extends Entity> Collection<T> getEntitiesByClass(@NotNull Class<T>... classes) {
-        return generateEntityListAdvanced(stream -> stream.map(AbstractEntity::wrap).filter(entity -> Stream.of(classes).allMatch(cls -> cls.isInstance(entity))).map(entity -> (T)entity));
+        return generateEntityListAdvanced(stream -> stream.map(AbstractEntity::wrap).filter(entity -> Stream.of(classes).allMatch(cls -> cls.isInstance(entity))).map(entity -> (T) entity));
 
     }
 
@@ -881,8 +915,18 @@ public class SoakWorld implements World, SoakSingleInstance<org.spongepowered.ap
     }
 
     @Override
+    public <T extends Entity> @NotNull T createEntity(@NotNull Location location, @NotNull Class<T> aClass) {
+        throw NotImplementedException.createByLazy(SoakWorld.class, "createEntity", Location.class, Class.class);
+    }
+
+    @Override
     public Entity getEntity(@NotNull UUID arg0) {
         return this.world.entity(arg0).map(entity -> AbstractEntity.wrap(entity)).orElse(null);
+    }
+
+    @Override
+    public @NotNull Collection<Entity> getNearbyEntities(@NotNull Location location, double v, double v1, double v2, @Nullable Predicate<? super Entity> predicate) {
+        throw NotImplementedException.createByLazy(World.class, "getNearbyEntities", Location.class, double.class, double.class, double.class, Predicate.class);
     }
 
     @Override
@@ -926,6 +970,17 @@ public class SoakWorld implements World, SoakSingleInstance<org.spongepowered.ap
     }
 
     @Override
+    public @Nullable RayTraceResult rayTraceEntities(@NotNull Position position, @NotNull Vector vector, double v, double v1, @Nullable Predicate<? super Entity> predicate) {
+        throw NotImplementedException.createByLazy(World.class,
+                "rayTraceEntities",
+                Position.class,
+                Vector.class,
+                double.class,
+                double.class,
+                Predicate.class);
+    }
+
+    @Override
     public RayTraceResult rayTraceBlocks(@NotNull Location arg0, @NotNull Vector arg1, double arg2) {
         throw NotImplementedException.createByLazy(World.class,
                 "rayTraceBlocks",
@@ -943,6 +998,32 @@ public class SoakWorld implements World, SoakSingleInstance<org.spongepowered.ap
                 double.class,
                 FluidCollisionMode.class,
                 boolean.class);
+    }
+
+    @Override
+    public @Nullable RayTraceResult rayTraceBlocks(@NotNull Position position, @NotNull Vector vector, double v, @NotNull FluidCollisionMode fluidCollisionMode, boolean b, @Nullable Predicate<? super Block> predicate) {
+        throw NotImplementedException.createByLazy(World.class,
+                "rayTraceBlocks",
+                Position.class,
+                Vector.class,
+                double.class,
+                FluidCollisionMode.class,
+                boolean.class,
+                Predicate.class);
+    }
+
+    @Override
+    public @Nullable RayTraceResult rayTrace(@NotNull Position position, @NotNull Vector vector, double v, @NotNull FluidCollisionMode fluidCollisionMode, boolean b, double v1, @Nullable Predicate<? super Entity> predicate, @Nullable Predicate<? super Block> predicate1) {
+        throw NotImplementedException.createByLazy(World.class,
+                "rayTrace",
+                Position.class,
+                Vector.class,
+                double.class,
+                FluidCollisionMode.class,
+                boolean.class,
+                double.class,
+                Predicate.class,
+                Predicate.class);
     }
 
     @Override
@@ -1111,6 +1192,11 @@ public class SoakWorld implements World, SoakSingleInstance<org.spongepowered.ap
     }
 
     @Override
+    public <T extends LivingEntity> @NotNull T spawn(@NotNull Location location, @NotNull Class<T> aClass, @NotNull CreatureSpawnEvent.SpawnReason spawnReason, boolean b, java.util.function.@Nullable Consumer<? super T> consumer) throws IllegalArgumentException {
+        throw NotImplementedException.createByLazy(World.class, "spawn", Location.class, Class.class, CreatureSpawnEvent.SpawnReason.class, boolean.class, java.util.function.Consumer.class);
+    }
+
+    @Override
     public @NotNull FallingBlock spawnFallingBlock(@NotNull Location arg0, @NotNull BlockData arg1) {
         throw NotImplementedException.createByLazy(World.class, "spawnFallingBlock", Location.class, BlockData.class);
     }
@@ -1240,6 +1326,11 @@ public class SoakWorld implements World, SoakSingleInstance<org.spongepowered.ap
     }
 
     @Override
+    public @NotNull FluidData getFluidData(int i, int i1, int i2) {
+        throw NotImplementedException.createByLazy(World.class, "getFluidData", int.class, int.class, int.class);
+    }
+
+    @Override
     public @NotNull BlockData getBlockData(@NotNull Location location) {
         return getBlockData(location.getBlockX(), location.getBlockY(), location.getBlockZ());
     }
@@ -1287,13 +1378,14 @@ public class SoakWorld implements World, SoakSingleInstance<org.spongepowered.ap
     }
 
     @Override
-    public boolean generateTree(@NotNull Location location, @NotNull Random random, @NotNull TreeType treeType, @Nullable Consumer<BlockState> consumer) {
-        throw NotImplementedException.createByLazy(World.class, "generateTree", Location.class, Random.class, TreeType.class, Consumer.class);
+    public boolean generateTree(@NotNull Location location, @NotNull Random random, @NotNull TreeType treeType, java.util.function.@Nullable Consumer<? super BlockState> consumer) {
+        throw NotImplementedException.createByLazy(World.class, "generateTree", Location.class, Random.class, TreeType.class, java.util.function.Consumer.class);
     }
 
     @Override
-    public boolean generateTree(@NotNull Location location, @NotNull Random random, @NotNull TreeType treeType, @Nullable Predicate<BlockState> predicate) {
+    public boolean generateTree(@NotNull Location location, @NotNull Random random, @NotNull TreeType treeType, @Nullable Predicate<? super BlockState> predicate) {
         throw NotImplementedException.createByLazy(World.class, "generateTree", Location.class, Random.class, TreeType.class, Predicate.class);
+
     }
 
     @Deprecated
@@ -1508,11 +1600,12 @@ public class SoakWorld implements World, SoakSingleInstance<org.spongepowered.ap
 
     @Override
     public int getWaterUndergroundCreatureSpawnLimit() {
-        return 0;
+        throw NotImplementedException.createByLazy(World.class, "getWaterUndergroundCreateSpawnLimit");
     }
 
     @Override
     public void setWaterUndergroundCreatureSpawnLimit(int i) {
+        throw NotImplementedException.createByLazy(World.class, "setWaterUndergroundCreateSpawnLimit", int.class);
 
     }
 
@@ -1544,6 +1637,12 @@ public class SoakWorld implements World, SoakSingleInstance<org.spongepowered.ap
     @Override
     public void setSpawnLimit(@NotNull SpawnCategory spawnCategory, int i) {
         throw NotImplementedException.createByLazy(World.class, "setSpawnLimit", SpawnCategory.class, int.class);
+    }
+
+    @Override
+    public void playNote(@NotNull Location location, @NotNull Instrument instrument, @NotNull Note note) {
+        throw NotImplementedException.createByLazy(World.class, "playNote", Location.class, Instrument.class, Note.class);
+
     }
 
     @Override
@@ -1589,6 +1688,17 @@ public class SoakWorld implements World, SoakSingleInstance<org.spongepowered.ap
     }
 
     @Override
+    public void playSound(@NotNull Location location, @NotNull Sound sound, @NotNull SoundCategory soundCategory, float v, float v1, long l) {
+        throw NotImplementedException.createByLazy(World.class, "playSound", Location.class, Sound.class, SoundCategory.class, float.class, float.class, long.class);
+    }
+
+    @Override
+    public void playSound(@NotNull Location location, @NotNull String s, @NotNull SoundCategory soundCategory, float v, float v1, long l) {
+        throw NotImplementedException.createByLazy(World.class, "playSound", Location.class, String.class, SoundCategory.class, float.class, float.class, long.class);
+
+    }
+
+    @Override
     public void playSound(@NotNull Entity entity, @NotNull Sound sound, float v, float v1) {
         throw NotImplementedException.createByLazy(World.class, "playSound", Entity.class, Sound.class, float.class, float.class);
     }
@@ -1608,6 +1718,18 @@ public class SoakWorld implements World, SoakSingleInstance<org.spongepowered.ap
     @Override
     public void playSound(@NotNull Entity entity, @NotNull String s, @NotNull SoundCategory soundCategory, float v, float v1) {
         throw NotImplementedException.createByLazy(World.class, "playSound", Entity.class, String.class, SoundCategory.class, float.class, float.class);
+
+    }
+
+    @Override
+    public void playSound(@NotNull Entity entity, @NotNull Sound sound, @NotNull SoundCategory soundCategory, float v, float v1, long l) {
+        throw NotImplementedException.createByLazy(World.class, "playSound", Entity.class, Sound.class, SoundCategory.class, float.class, float.class, long.class);
+
+    }
+
+    @Override
+    public void playSound(@NotNull Entity entity, @NotNull String s, @NotNull SoundCategory soundCategory, float v, float v1, long l) {
+        throw NotImplementedException.createByLazy(World.class, "playSound", Entity.class, String.class, SoundCategory.class, float.class, float.class, long.class);
 
     }
 
@@ -1693,40 +1815,22 @@ public class SoakWorld implements World, SoakSingleInstance<org.spongepowered.ap
     }
 
     @Override
-    @Deprecated
-    public boolean isUltrawarm() {
-        throw NotImplementedException.createByLazy(World.class, "isUltrawarm");
-    }
-
-    @Override
     public boolean isNatural() {
         throw NotImplementedException.createByLazy(World.class, "isNatural");
     }
 
     @Override
     public boolean isBedWorks() {
-        return this.doesBedWork();
+        return this.world.properties().get(Keys.BEDS_USABLE).orElse(false);
     }
 
     @Override
     public boolean hasSkyLight() {
-        return this.hasSkylight();
-    }
-
-    @Override
-    public boolean hasCeiling() {
-        return this.hasBedrockCeiling();
-    }
-
-    @Override
-    @Deprecated
-    public boolean hasSkylight() {
         throw NotImplementedException.createByLazy(World.class, "hasSkylight");
     }
 
     @Override
-    @Deprecated
-    public boolean hasBedrockCeiling() {
+    public boolean hasCeiling() {
         throw NotImplementedException.createByLazy(World.class, "hasBedrockCeiling");
     }
 
@@ -1737,13 +1841,8 @@ public class SoakWorld implements World, SoakSingleInstance<org.spongepowered.ap
 
     @Override
     public boolean isRespawnAnchorWorks() {
-        return false;
-    }
+        throw NotImplementedException.createByLazy(World.class, "isRespawnAnchorWorks");
 
-    @Override
-    @Deprecated
-    public boolean doesBedWork() {
-        throw NotImplementedException.createByLazy(World.class, "doesBedWork");
     }
 
     @Override
@@ -1753,7 +1852,8 @@ public class SoakWorld implements World, SoakSingleInstance<org.spongepowered.ap
 
     @Override
     public boolean isUltraWarm() {
-        return this.isUltrawarm();
+        throw NotImplementedException.createByLazy(World.class, "isUltraWarm");
+
     }
 
     @Override
@@ -1768,6 +1868,7 @@ public class SoakWorld implements World, SoakSingleInstance<org.spongepowered.ap
 
     @Override
     public void sendGameEvent(@Nullable Entity entity, @NotNull GameEvent gameEvent, @NotNull Vector vector) {
+        throw NotImplementedException.createByLazy(World.class, "sendGameEvent", Entity.class, GameEvent.class, Vector.class);
 
     }
 
@@ -1812,13 +1913,42 @@ public class SoakWorld implements World, SoakSingleInstance<org.spongepowered.ap
     }
 
     @Override
+    public @NotNull Collection<GeneratedStructure> getStructures(int i, int i1) {
+        throw NotImplementedException.createByLazy(World.class, "getStructures", int.class, int.class);
+    }
+
+    @Override
+    public @NotNull Collection<GeneratedStructure> getStructures(int i, int i1, @NotNull Structure structure) {
+        throw NotImplementedException.createByLazy(World.class, "getStructures", int.class, int.class, Structure.class);
+
+    }
+
+    @Override
     public @NotNull Spigot spigot() {
         throw NotImplementedException.createByLazy(World.class, "spigot");
     }
 
     @Override
+    public @Nullable BiomeSearchResult locateNearestBiome(@NotNull Location location, int i, @NotNull Biome... biomes) {
+        throw NotImplementedException.createByLazy(World.class, "locateNearestBiome", Location.class, int.class, Biome[].class);
+
+    }
+
+    @Override
+    public @Nullable BiomeSearchResult locateNearestBiome(@NotNull Location location, int i, int i1, int i2, @NotNull Biome... biomes) {
+        throw NotImplementedException.createByLazy(World.class, "locateNearestBiome", Location.class, int.class, int.class, int.class, Biome[].class);
+
+    }
+
+    @Override
     public Raid locateNearestRaid(@NotNull Location arg0, int arg1) {
         throw NotImplementedException.createByLazy(World.class, "locateNearestRaid", Location.class, int.class);
+    }
+
+    @Override
+    public @Nullable Raid getRaid(int i) {
+        throw NotImplementedException.createByLazy(World.class, "getRaid", int.class);
+
     }
 
     @Override
@@ -1833,13 +1963,7 @@ public class SoakWorld implements World, SoakSingleInstance<org.spongepowered.ap
 
     @Override
     public @NotNull Set<FeatureFlag> getFeatureFlags() {
-        return Collections.emptySet();
-    }
-
-    @Override
-    @Deprecated
-    public boolean doesRespawnAnchorWork() {
-        throw NotImplementedException.createByLazy(World.class, "doesRespawnAnchorWork");
+        throw NotImplementedException.createByLazy(World.class, "getFeatureFlags");
     }
 
     @Override

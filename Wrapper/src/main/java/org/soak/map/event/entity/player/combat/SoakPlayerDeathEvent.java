@@ -1,16 +1,19 @@
 package org.soak.map.event.entity.player.combat;
 
 import net.kyori.adventure.text.Component;
+import org.bukkit.damage.DamageType;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.soak.WrapperManager;
 import org.soak.map.event.EventSingleListenerWrapper;
 import org.soak.map.item.SoakItemStackMap;
 import org.soak.plugin.SoakManager;
+import org.soak.wrapper.damage.SoakDamageSource;
 import org.spongepowered.api.data.Keys;
 import org.spongepowered.api.entity.living.player.server.ServerPlayer;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.Order;
+import org.spongepowered.api.event.cause.entity.damage.source.DamageSource;
 import org.spongepowered.api.event.entity.DestructEntityEvent;
 import org.spongepowered.api.event.item.inventory.DropItemEvent;
 import org.spongepowered.api.registry.RegistryTypes;
@@ -57,10 +60,18 @@ public class SoakPlayerDeathEvent {
 
     private void fireEvent(DropItemEvent.Destruct event, EventPriority priority) {
         var root = event.cause().root();
-        if (!(root instanceof ServerPlayer)) {
+        if (!(root instanceof ServerPlayer spongePlayer)) {
             return;
         }
-        var entity = SoakManager.<WrapperManager>getManager().getMemoryStore().get((ServerPlayer) root);
+        var opSpongeDamageCause = event.cause().first(DamageSource.class);
+        if (opSpongeDamageCause.isEmpty()) {
+            //shouldnt be possible
+            return;
+        }
+        var spongeDamageCause = opSpongeDamageCause.get();
+        var bukkitDamageSource = new SoakDamageSource(spongeDamageCause, spongePlayer.world());
+
+        var entity = SoakManager.<WrapperManager>getManager().getMemoryStore().get(spongePlayer);
         var items = event.entities()
                 .parallelStream()
                 .map(itemEntity -> itemEntity.get(Keys.ITEM_STACK_SNAPSHOT)
@@ -69,7 +80,7 @@ public class SoakPlayerDeathEvent {
                 .map(SoakItemStackMap::toBukkit)
                 .collect(Collectors.toList());
         //TODO -> find exp
-        var bukkitEvent = new PlayerDeathEvent(entity, items, 0, this.deathMessage);
+        var bukkitEvent = new PlayerDeathEvent(entity, bukkitDamageSource, items, 0, this.deathMessage);
         SoakManager.<WrapperManager>getManager().getServer().getSoakPluginManager().callEvent(this.singleListenerWrapper, bukkitEvent, priority);
 
         //TODO -> spawn the player back in if event is cancelled

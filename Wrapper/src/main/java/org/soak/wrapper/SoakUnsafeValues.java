@@ -1,7 +1,11 @@
 package org.soak.wrapper;
 
 import com.google.common.collect.Multimap;
-import io.papermc.paper.inventory.ItemRarity;
+import com.google.gson.JsonObject;
+import io.papermc.paper.inventory.tooltip.TooltipContext;
+import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
+import io.papermc.paper.registry.tag.Tag;
+import io.papermc.paper.registry.tag.TagKey;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.flattener.ComponentFlattener;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
@@ -16,20 +20,31 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.command.CommandSender;
+import org.bukkit.damage.DamageEffect;
+import org.bukkit.damage.DamageSource;
+import org.bukkit.damage.DamageType;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.CreativeCategory;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.MaterialData;
 import org.bukkit.plugin.InvalidPluginException;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.potion.PotionType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.soak.exception.NotImplementedException;
+import org.soak.generate.bukkit.MaterialList;
 import org.soak.map.item.SoakItemStackMap;
 import org.soak.plugin.SoakManager;
+import org.soak.wrapper.inventory.SoakItemStack;
+import org.soak.wrapper.plugin.lifecycle.event.SoakLifecycleEventManager;
 import org.spongepowered.api.ResourceKey;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.data.Key;
 import org.spongepowered.api.data.Keys;
 import org.spongepowered.api.data.type.InstrumentTypes;
@@ -39,11 +54,20 @@ import org.spongepowered.api.util.Ticks;
 import org.spongepowered.configurate.gson.GsonConfigurationLoader;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.BooleanSupplier;
 
 @SuppressWarnings("deprecation")
 public class SoakUnsafeValues implements UnsafeValues {
+
+    //Hidden method used by some plugins
+    //these are unique to every minecraft version
+    public String getMappingsVersion() {
+        return "7092ff1ff9352ad7e2260dc150e6a3ec";
+    }
+
     @Override
     public GsonComponentSerializer colorDownsamplingGsonComponentSerializer() {
         throw NotImplementedException.createByLazy(UnsafeValues.class, "colorDownsamplingGsonComponentSerializer");
@@ -101,12 +125,13 @@ public class SoakUnsafeValues implements UnsafeValues {
 
     @Override
     public Material getMaterial(String arg0, int arg1) {
-        throw NotImplementedException.createByLazy(UnsafeValues.class, "getMaterial", String.class, int.class);
+        //DONT KNOW WHAT THE NUMBER IS, BUT STRING LOOKS LIKE MATERIAL NAME
+        return (Material) MaterialList.getMaterial(arg0);
     }
 
     @Override
     public int getDataVersion() {
-        throw NotImplementedException.createByLazy(UnsafeValues.class, "getDataVersion");
+        return Sponge.platform().minecraftVersion().dataVersion().orElseThrow();
     }
 
     @Override
@@ -227,6 +252,16 @@ public class SoakUnsafeValues implements UnsafeValues {
     }
 
     @Override
+    public @NotNull JsonObject serializeItemAsJson(@NotNull ItemStack itemStack) {
+        throw NotImplementedException.createByLazy(UnsafeValues.class, "serializeItemAsJson", ItemStack.class);
+    }
+
+    @Override
+    public @NotNull ItemStack deserializeItemFromJson(@NotNull JsonObject jsonObject) throws IllegalArgumentException {
+        throw NotImplementedException.createByLazy(UnsafeValues.class, "deserializeItemFromJson", JsonObject.class);
+    }
+
+    @Override
     public byte[] serializeEntity(Entity entity) {
         throw NotImplementedException.createByLazy(UnsafeValues.class, "serializeEntity", Entity.class);
     }
@@ -242,8 +277,33 @@ public class SoakUnsafeValues implements UnsafeValues {
     }
 
     @Override
-    public @Nullable FeatureFlag getFeatureFlag(@NotNull NamespacedKey namespacedKey) {
-        throw NotImplementedException.createByLazy(UnsafeValues.class, "getFeatureFlag", NamespacedKey.class);
+    public String getTranslationKey(Attribute attribute) {
+        throw NotImplementedException.createByLazy(UnsafeValues.class, "getTranslationKey", Attribute.class);
+    }
+
+    @Override
+    public PotionType.InternalPotionData getInternalPotionData(NamespacedKey namespacedKey) {
+        throw NotImplementedException.createByLazy(UnsafeValues.class, "getInternalPotionData", NamespacedKey.class);
+    }
+
+    @Override
+    public @Nullable DamageEffect getDamageEffect(@NotNull String s) {
+        throw NotImplementedException.createByLazy(UnsafeValues.class, "getDamageEffect", String.class);
+    }
+
+    @Override
+    public DamageSource.Builder createDamageSourceBuilder(@NotNull DamageType damageType) {
+        throw NotImplementedException.createByLazy(UnsafeValues.class, "createDamageSourceBuilder", DamageType.class);
+    }
+
+    @Override
+    public String get(Class<?> aClass, String s) {
+        throw NotImplementedException.createByLazy(UnsafeValues.class, "get", Class.class, String.class);
+    }
+
+    @Override
+    public <B extends Keyed> B get(Registry<B> registry, NamespacedKey namespacedKey) {
+        throw NotImplementedException.createByLazy(UnsafeValues.class, "get", Registry.class, NamespacedKey.class);
     }
 
     @Override
@@ -262,28 +322,13 @@ public class SoakUnsafeValues implements UnsafeValues {
     }
 
     @Override
-    public ItemRarity getItemRarity(Material arg0) {
-        throw NotImplementedException.createByLazy(UnsafeValues.class, "getItemRarity", Material.class);
-    }
-
-    @Override
-    public ItemRarity getItemStackRarity(ItemStack arg0) {
-        throw NotImplementedException.createByLazy(UnsafeValues.class, "getItemStackRarity", ItemStack.class);
-    }
-
-    @Override
     public boolean isValidRepairItemStack(@NotNull ItemStack arg0, @NotNull ItemStack arg1) {
         throw NotImplementedException.createByLazy(UnsafeValues.class, "isValidRepairItemStack", ItemStack.class, ItemStack.class);
     }
 
     @Override
-    public @NotNull Multimap<Attribute, AttributeModifier> getItemAttributes(@NotNull Material material, @NotNull EquipmentSlot equipmentSlot) {
-        throw NotImplementedException.createByLazy(UnsafeValues.class, "getItemAttributes", Material.class, EquipmentSlot.class);
-    }
-
-    @Override
     public int getProtocolVersion() {
-        throw NotImplementedException.createByLazy(UnsafeValues.class, "getProtocolVersion");
+        return Sponge.platform().minecraftVersion().protocolVersion();
     }
 
     @Override
@@ -297,11 +342,6 @@ public class SoakUnsafeValues implements UnsafeValues {
     }
 
     @Override
-    public boolean isCollidable(@NotNull Material material) {
-        throw NotImplementedException.createByLazy(UnsafeValues.class, "isCollidable", Material.class);
-    }
-
-    @Override
     public @NotNull NamespacedKey getBiomeKey(RegionAccessor regionAccessor, int i, int i1, int i2) {
         throw NotImplementedException.createByLazy(UnsafeValues.class, "setBiomeKey", RegionAccessor.class, int.class, int.class, int.class);
     }
@@ -309,6 +349,38 @@ public class SoakUnsafeValues implements UnsafeValues {
     @Override
     public void setBiomeKey(RegionAccessor regionAccessor, int i, int i1, int i2, NamespacedKey namespacedKey) {
         throw NotImplementedException.createByLazy(UnsafeValues.class, "setBiomeKey", RegionAccessor.class, int.class, int.class, int.class, NamespacedKey.class);
+    }
+
+    @Override
+    public String getStatisticCriteriaKey(@NotNull Statistic statistic) {
+        throw NotImplementedException.createByLazy(UnsafeValues.class, "getStatisticCriteriaKey", Statistic.class);
+    }
+
+    @Override
+    public @Nullable Color getSpawnEggLayerColor(EntityType entityType, int i) {
+        throw NotImplementedException.createByLazy(UnsafeValues.class, "getSpawnEggLayerColor", EntityType.class, int.class);
+    }
+
+    @Override
+    public LifecycleEventManager<Plugin> createPluginLifecycleEventManager(JavaPlugin javaPlugin, BooleanSupplier booleanSupplier) {
+        boolean test = booleanSupplier.getAsBoolean();
+        //TODO work this one out, not on javadocs
+        return new SoakLifecycleEventManager<>();
+    }
+
+    @Override
+    public @NotNull List<Component> computeTooltipLines(@NotNull ItemStack itemStack, @NotNull TooltipContext tooltipContext, @Nullable Player player) {
+        throw NotImplementedException.createByLazy(UnsafeValues.class, "computeTooltipLines", ItemStack.class, TooltipContext.class, Player.class);
+    }
+
+    @Override
+    public @Nullable <A extends Keyed, M> Tag<A> getTag(@NotNull TagKey<A> tagKey) {
+        throw NotImplementedException.createByLazy(UnsafeValues.class, "getTag", TagKey.class);
+    }
+
+    @Override
+    public ItemStack createEmptyStack() {
+        return new SoakItemStack();
     }
 
     @Override

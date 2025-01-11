@@ -19,11 +19,11 @@ import org.bukkit.util.VoxelShape;
 import org.jetbrains.annotations.NotNull;
 import org.soak.WrapperManager;
 import org.soak.exception.NotImplementedException;
+import org.soak.map.SoakBlockMap;
 import org.soak.map.item.SoakItemStackMap;
 import org.soak.plugin.SoakManager;
 import org.soak.wrapper.block.data.CommonBlockData;
 import org.soak.wrapper.block.state.AbstractBlockState;
-import org.soak.wrapper.block.state.generic.GenericBlockSnapshotState;
 import org.soak.wrapper.world.SoakWorld;
 import org.spongepowered.api.data.Keys;
 import org.spongepowered.api.world.BlockChangeFlags;
@@ -97,7 +97,7 @@ public class SoakBlock extends AbstractBlock<ServerLocation> {
 
     @Override
     public void setType(Material arg0, boolean arg1) {
-        var blockType = arg0.asBlock().orElseThrow(() -> new RuntimeException(arg0.name() + " is not a block"));
+        var blockType = SoakBlockMap.toSponge(arg0).orElseThrow(() -> new RuntimeException(arg0.name() + " is not a block"));
         var blockChangeFlag = arg1 ? BlockChangeFlags.ALL : BlockChangeFlags.NOTIFY_CLIENTS;
         this.block.setBlockType(blockType, blockChangeFlag);
     }
@@ -174,6 +174,11 @@ public class SoakBlock extends AbstractBlock<ServerLocation> {
 
     @Override
     public void tick() {
+        throw NotImplementedException.createByLazy(Block.class, "tick");
+    }
+
+    @Override
+    public void fluidTick() {
         throw NotImplementedException.createByLazy(Block.class, "tick");
     }
 
@@ -289,9 +294,7 @@ public class SoakBlock extends AbstractBlock<ServerLocation> {
 
     @Override
     public BlockState getState() {
-        return this.block.blockEntity()
-                .map(entity -> (BlockState) AbstractBlockState.wrap(entity, false))
-                .orElseGet(() -> new GenericBlockSnapshotState(this.block.createSnapshot()));
+        return AbstractBlockState.wrap(this.spongeLocation(), this.block.block(), false);
     }
 
     @Override

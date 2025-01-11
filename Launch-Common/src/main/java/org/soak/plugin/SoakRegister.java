@@ -21,15 +21,16 @@ import java.util.stream.Collectors;
 
 class SoakRegister {
 
-    public static void startEnchantmentTypes(Logger logger) {
+    /*public static void startEnchantmentTypes(Logger logger) {
         logger.info("Registering Enchantment Types");
         Registry<EnchantmentType> registry = RegistryTypes.ENCHANTMENT_TYPE.get();
-        registry.stream().map(SoakEnchantment::new).forEach(Enchantment::registerEnchantment);
+        registry.stream().map(SoakEnchantment::new).forEach(soak -> soak.);
         Enchantment.stopAcceptingRegistrations();
+        Enchantment.
 
-    }
+    }*/
 
-    public static void startPotionEffects(Logger logger) {
+    /*public static void startPotionEffects(Logger logger) {
         logger.info("Registering Potion Effect Types");
         Registry<PotionEffectType> registry = RegistryTypes.POTION_EFFECT_TYPE.get();
 
@@ -89,7 +90,7 @@ class SoakRegister {
                 .forEach(effect -> {
                     while (true) {
                         try {
-                            org.bukkit.potion.PotionEffectType.registerPotionEffectType(effect);
+                            //org.bukkit.potion.PotionEffectType.registerPotionEffectType(effect);
                             break;
                         } catch (IllegalArgumentException e) {
                             //noinspection deprecation
@@ -104,6 +105,6 @@ class SoakRegister {
                     }
                 });
 
-        org.bukkit.potion.PotionEffectType.stopAcceptingRegistrations();
-    }
+        //org.bukkit.potion.PotionEffectType.stopAcceptingRegistrations();
+    }*/
 }

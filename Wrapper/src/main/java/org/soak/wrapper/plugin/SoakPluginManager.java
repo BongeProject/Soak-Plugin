@@ -23,7 +23,7 @@ import org.soak.map.event.EventSingleListenerWrapper;
 import org.soak.plugin.SoakManager;
 import org.soak.plugin.SoakPluginContainer;
 import org.soak.plugin.paper.SoakPluginProviderContext;
-import org.soak.utils.GenericHelper;
+import org.soak.utils.GeneralHelper;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.plugin.PluginManager;
 import org.spongepowered.api.service.permission.PermissionService;
@@ -51,7 +51,6 @@ public class SoakPluginManager implements org.bukkit.plugin.PluginManager {
     public PluginManager spongeManager() {
         return this.spongePluginManager.get();
     }
-
 
     @Override
     public @Nullable JavaPlugin loadPlugin(@NotNull File file) throws InvalidPluginException, InvalidDescriptionException, UnknownDependencyException {
@@ -91,6 +90,11 @@ public class SoakPluginManager implements org.bukkit.plugin.PluginManager {
     }
 
     @Override
+    public @NotNull Plugin[] loadPlugins(@NotNull File[] files) {
+        return MoseStream.stream(files).map(this::loadPlugin).toArray(JavaPlugin[]::new);
+    }
+
+    @Override
     public void disablePlugins() {
 
     }
@@ -102,7 +106,7 @@ public class SoakPluginManager implements org.bukkit.plugin.PluginManager {
 
     @Override
     public boolean isPluginEnabled(@Nullable Plugin plugin) {
-        return SoakManager.getManager().getBukkitContainers()
+        return SoakManager.getManager().getBukkitSoakContainers()
                 .anyMatch(container -> container.getBukkitInstance().equals(plugin));
     }
 
@@ -122,7 +126,7 @@ public class SoakPluginManager implements org.bukkit.plugin.PluginManager {
 
     @Override
     public @NotNull Plugin[] getPlugins() {
-        return SoakManager.getManager().getBukkitContainers()
+        return SoakManager.getManager().getBukkitSoakContainers()
                 .map(SoakPluginContainer::getBukkitInstance)
                 .toArray(Plugin[]::new);
     }
@@ -197,7 +201,7 @@ public class SoakPluginManager implements org.bukkit.plugin.PluginManager {
 
     private void registerEvent(EventSingleListenerWrapper<?> eventWrapper) {
         this.events.add(eventWrapper);
-        SoakPluginContainer pluginContainer = SoakManager.getManager().getContainer(eventWrapper.plugin());
+        SoakPluginContainer pluginContainer = SoakManager.getManager().getSoakContainer(eventWrapper.plugin());
         Class<?>[] soakEventClasses;
         try {
             soakEventClasses = EventClassMapping.soakEventClass(eventWrapper.event());
@@ -234,13 +238,13 @@ public class SoakPluginManager implements org.bukkit.plugin.PluginManager {
 
     @Override
     public @Nullable Permission getPermission(@NotNull String name) {
-        throw NotImplementedException.createByLazy(SoakPluginManager.class, "getPermission", String.class);
+        return permissionService().flatMap(service -> service.descriptions().stream().filter(d -> d.id().equals(name)).findAny()).map(d -> SoakPermissionMap.toBukkit(d)).orElse(null);
     }
 
     @Override
     public void addPermission(@NotNull Permission perm) {
         permissionService().ifPresent(service -> {
-            var pluginContainer = GenericHelper.fromStackTrace();
+            var pluginContainer = GeneralHelper.fromStackTrace();
             Tristate permissionDefault = switch (perm.getDefault()) {
                 case TRUE -> Tristate.TRUE;
                 case FALSE -> Tristate.FALSE;

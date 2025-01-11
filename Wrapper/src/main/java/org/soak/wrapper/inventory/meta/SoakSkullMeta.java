@@ -9,10 +9,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.soak.exception.NotImplementedException;
 import org.soak.wrapper.SoakOfflinePlayer;
+import org.soak.wrapper.profile.SoakPlayerProfile;
 import org.spongepowered.api.data.Keys;
-import org.spongepowered.api.data.value.ValueContainer;
-import org.spongepowered.api.item.inventory.ItemStack;
-import org.spongepowered.api.item.inventory.ItemStackSnapshot;
+import org.spongepowered.api.item.inventory.ItemStackLike;
 import org.spongepowered.api.profile.GameProfile;
 import org.spongepowered.api.profile.property.ProfileProperty;
 
@@ -20,18 +19,7 @@ import java.util.Optional;
 
 public class SoakSkullMeta extends AbstractItemMeta implements SkullMeta {
 
-    public SoakSkullMeta(ItemStack stack) {
-        super(stack);
-    }
-
-    public SoakSkullMeta(ItemStackSnapshot stack) {
-        super(stack);
-    }
-
-    //shouldn't use if the type is known
-    @SuppressWarnings("DeprecatedIsStillUsed")
-    @Deprecated
-    public SoakSkullMeta(ValueContainer container) {
+    public SoakSkullMeta(ItemStackLike container) {
         super(container);
     }
 
@@ -74,13 +62,20 @@ public class SoakSkullMeta extends AbstractItemMeta implements SkullMeta {
     }
 
     @Override
-    public org.bukkit.profile.@Nullable PlayerProfile getOwnerProfile() {
-        throw NotImplementedException.createByLazy(SkullMeta.class, "getOwnerProfile");
+    public @Nullable org.bukkit.profile.PlayerProfile getOwnerProfile() {
+        return this.container.get(Keys.GAME_PROFILE).map(p -> new SoakPlayerProfile(p, true)).orElse(null);
     }
 
     @Override
-    public void setOwnerProfile(org.bukkit.profile.@Nullable PlayerProfile playerProfile) {
-        throw NotImplementedException.createByLazy(SkullMeta.class, "setOwnerProfile", PlayerProfile.class);
+    public void setOwnerProfile(@Nullable org.bukkit.profile.PlayerProfile playerProfile) {
+        if(playerProfile == null){
+            remove(Keys.GAME_PROFILE);
+            return;
+        }
+        if(!(playerProfile instanceof SoakPlayerProfile spp)){
+            throw new IllegalArgumentException("profile must be SoakPlayerProfile: Found " + playerProfile.getClass().getName());
+        }
+        this.set(Keys.GAME_PROFILE, spp.profile());
     }
 
     @Override

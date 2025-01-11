@@ -8,7 +8,7 @@ import org.bukkit.event.inventory.InventoryType;
 import org.soak.WrapperManager;
 import org.soak.map.event.EventSingleListenerWrapper;
 import org.soak.plugin.SoakManager;
-import org.soak.wrapper.inventory.SoakInventoryView;
+import org.soak.wrapper.inventory.view.AbstractInventoryView;
 import org.spongepowered.api.data.Keys;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.Order;
@@ -61,9 +61,12 @@ public class SoakInventoryClickEvent {
         if (opSlotIndex.isEmpty()) {
             return;
         }
-        var inventoryView = new SoakInventoryView(event.container());
+        var inventoryView = AbstractInventoryView.wrap(event.container());
         var action = mapAction(event);
-        var slotType = InventoryType.SlotType.typeFor(slot.get());
+        //var slotType = InventoryType.SlotType.typeFor(slot.get());
+        var slotType = InventoryType.SlotType.QUICKBAR;
+        System.err.println("Need to do mapping of SlotType enum");
+
 
         var bukkitEvent = new InventoryClickEvent(inventoryView, slotType, opSlotIndex.get(), clickType, action);
         SoakManager.<WrapperManager>getManager().getServer().getSoakPluginManager().callEvent(this.singleEventListener, bukkitEvent, priority);
@@ -89,19 +92,19 @@ public class SoakInventoryClickEvent {
             var curserTransaction = event.cursorTransaction();
             var cursorAfter = curserTransaction.finalReplacement();
             var cursorBefore = curserTransaction.original();
-            if(cursorBefore.isEmpty() && cursorAfter.isEmpty()){
+            if (cursorBefore.isEmpty() && cursorAfter.isEmpty()) {
                 return InventoryAction.NOTHING;
             }
-            if(!event.transactions().isEmpty()) {
+            if (!event.transactions().isEmpty()) {
                 var slotAfter = event.transactions().get(0).finalReplacement();
                 if (cursorBefore.isEmpty()) {
-                    if(slotAfter.equals(cursorBefore)){
+                    if (slotAfter.equals(cursorBefore)) {
                         return InventoryAction.PICKUP_ALL;
                     }
-                    if((slotAfter.quantity() / 2) == cursorAfter.quantity()){
+                    if ((slotAfter.quantity() / 2) == cursorAfter.quantity()) {
                         return InventoryAction.PICKUP_HALF;
                     }
-                    if(cursorAfter.quantity() == 1){
+                    if (cursorAfter.quantity() == 1) {
                         return InventoryAction.PICKUP_ONE;
                     }
                     return InventoryAction.PICKUP_SOME;

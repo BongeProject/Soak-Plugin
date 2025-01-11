@@ -1,64 +1,137 @@
+import java.nio.file.Files
+
 plugins {
     id 'java'
 }
 
 group = 'org.soak'
-version = '1.0.0'
+version = project.rootProject.version
 
 repositories {
     mavenCentral()
+    maven {
+        url "https://hub.spigotmc.org/nexus/content/repositories/snapshots"
+    }
 }
 
 java {
     toolchain {
-        targetCompatibility = JavaVersion.VERSION_17
-        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.valueOf("VERSION_" + property("JAVA_VERSION"))
+        sourceCompatibility = JavaVersion.valueOf("VERSION_" + property("JAVA_VERSION"))
     }
 }
 
 dependencies {
-    implementation project(':bukkit-api')
     implementation project(':Wrapper')
     implementation project(':Common')
     implementation project(':MoseStream')
     implementation project(':Launch-Common')
 
-    implementation 'org.spongepowered:spongeapi:10.0.0'
+    implementation 'org.spongepowered:spongeapi:' + property("SPONGE_VERSION")
 
-    implementation 'net.minecraftforge:fmlcore:1.19.4-45.2.8'
-    implementation 'net.minecraftforge:forgespi:6.0.0'
+    //implementation 'net.minecraftforge:fmlcore:1.19.4-45.2.8'
+    //implementation 'net.minecraftforge:forgespi:6.0.0'
     implementation 'commons-lang:commons-lang:2.6' //included with bukkit -> forced onto forge
+
+    implementation 'io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT'
+    implementation 'net.bytebuddy:byte-buddy:1.15.10'
+
 
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
 }
 
+processResources {
+    var soakPropertiesPath = "./build/resources/main/META-INF/soak-info.properties"
+    var soakPropertiesFile = project.file(soakPropertiesPath).toPath();
+    if (Files.notExists(soakPropertiesFile)) {
+        Files.createDirectories(soakPropertiesFile.parent)
+        Files.createFile(soakPropertiesFile)
+    }
+    var writer = new FileWriter(soakPropertiesFile.toFile());
+    writer.append("Bukkit-Version=" + project.property("BUKKIT_VERSION"))
+    writer.append("\nSoak-Version=" + version)
+    writer.flush()
+    writer.close()
+
+    (configurations.runtimeClasspath + soakPropertiesFile.toFile())
+
+    eachFile { copyDetails ->
+        filter { line ->
+            line.replaceAll("%%spongeVersion%%", project.property("SPONGE_VERSION")).replaceAll("%%pluginVersion%%", version)
+        }
+    }
+
+}
+
 jar {
     duplicatesStrategy = DuplicatesStrategy.WARN
+    archiveFileName = "Soak.jar"
 
-    dependsOn(":bukkit-api:jar")
     dependsOn(":MoseStream:jar")
     dependsOn(":CollectionStream:jar")
-    dependsOn(":VanillaMaterials:jar")
+    dependsOn(":Override:jar")
+    dependsOn(":Launch-External:Neo:jar")
+    dependsOn(":NMSBounce:jar")
 
     var fat = configurations.runtimeClasspath.filter {
-        System.out.println("Name: " + it.name);
-        return it.name.startsWith("bukkit-api")
-                || it.name.startsWith("Launch-Common")
+        System.out.println("Name: " + it.name)
+        return it.name.startsWith("Launch-Common")
                 || it.name.startsWith("Common-")
                 || it.name.startsWith("Wrapper-")
                 || it.name.startsWith("MoseStream")
                 || it.name.startsWith("CollectionStream")
                 || it.name.startsWith("json-simple")
                 || it.name.startsWith("paperlib")
+                || it.name.startsWith("byte-buddy-")
+                || it.name.startsWith("paper-api-")
+                || it.name.startsWith("adventure-text-logger-slf4j-")
+                || it.name.startsWith("bungeecord-chat-")
                 || it.name.equals("commons-lang-2.6.jar")
-    }.collect { it.isDirectory() ? it : zipTree(it) }
+    }.collect(element -> {
+        if (element.name.startsWith("paper-api-")) {
+            return zipTree(element).matching {
+                exclude "org/bukkit/configuration/file/YamlConfiguration.class"
+            }
+        }
+        if (element.name.startsWith("commons-lang-")) {
+            return zipTree(element).matching {
+                //'enum' is no longer a valid package name -> removes all classes within the library ... plugins shouldnt be using this library anymore so hopefully wont change much
+                exclude(
+                        "org/apache/commons/lang/enum/Enum\$Entry.class",
+                        "org/apache/commons/lang/enum/Enum.class",
+                        "org/apache/commons/lang/enum/EnumUtils.class",
+                        "org/apache/commons/lang/enum/ValuedEnum.class"
+                )
 
-    var materialFile = project.file("../VanillaMaterials/build/libs/VanillaMaterials-1.0.0.jar")
-    fat.add(zipTree(materialFile));
+            }
+        }
+        return (FileTree) (element.isDirectory() ? element : zipTree(element))
+    })
+
+    var insertFolders = new String[]{"../Override/build/libs/", "./Neo/build/libs/"}
+    for (var folderPath : insertFolders) {
+        var folder = project.file(folderPath);
+        var files = folder.listFiles();
+        if (files != null && files.length != 0) {
+
+            var file = files[0]
+            fat.add(zipTree(file))
+        } else {
+            new RuntimeException(folder.absolutePath + " was not found, this may lead to some compatibility issues").printStackTrace()
+        }
+    }
+
+    var insertJarFiles = new String[]{"../NMSBounce/build/libs/NMSBounce.jar"}
+    for (var file : insertJarFiles) {
+        fat.add(files(file))
+    }
+
+    var excludeList = new String[]{"Material.class", "EntityType.class", "org/bukkit/attribute/Attribute.class"}
 
     from(fat).exclude {
-        return it.name == "Compatibility.class" && !it.file.absolutePath.contains("zip_");
+        var name = it.toString();
+            return excludeList.contains(name)
     }
 }
 

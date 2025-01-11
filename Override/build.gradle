@@ -1,0 +1,29 @@
+plugins {
+    id 'java'
+}
+
+group = 'org.soak'
+version = '1.0.0'
+
+java {
+    toolchain {
+        targetCompatibility = JavaVersion.valueOf("VERSION_" + property("JAVA_VERSION"))
+        sourceCompatibility = JavaVersion.valueOf("VERSION_" + property("JAVA_VERSION"))
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        url "https://repo.papermc.io/repository/maven-public"
+    }
+}
+
+dependencies {
+    implementation 'org.spongepowered:spongeapi:' + property("SPONGE_VERSION")
+    implementation 'io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT'
+}
+
+test {
+    useJUnitPlatform()
+}

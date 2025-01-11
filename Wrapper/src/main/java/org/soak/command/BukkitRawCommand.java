@@ -25,7 +25,6 @@ public class BukkitRawCommand implements Command.Raw {
     private final org.bukkit.command.Command command;
     private final SoakPluginContainer owningPlugin;
 
-
     public BukkitRawCommand(SoakPluginContainer owningPlugin, org.bukkit.command.Command command) {
         this.command = command;
         this.owningPlugin = owningPlugin;
@@ -39,7 +38,7 @@ public class BukkitRawCommand implements Command.Raw {
                 return rawCommand;
             }
             return rawCommand.substring(0, index);
-        }).orElse("");
+        }).orElse(this.command.getName());
         String[] args = arguments.input().split(" ");
         try {
             boolean result = this.command.execute(SoakSubjectMap.mapToBukkit(cause.subject()), command, args);

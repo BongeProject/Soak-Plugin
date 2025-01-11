@@ -27,6 +27,10 @@ public class SoakPlayerProfile implements PlayerProfile {
         this.fromCached = cached;
     }
 
+    public GameProfile profile(){
+        return this.profile;
+    }
+
     @Override
     public @Nullable UUID getUniqueId() {
         return this.profile.uniqueId();
@@ -69,21 +73,20 @@ public class SoakPlayerProfile implements PlayerProfile {
     }
 
     @Override
-    public @NotNull PlayerTextures getTextures() {
-        String textureName = org.spongepowered.api.profile.property.ProfileProperty.TEXTURES;
-        var spongeProperty = this
-                .profile
-                .properties()
-                .stream()
-                .filter(property -> property.name().equals(textureName))
-                .findAny()
-                .orElseGet(() -> org.spongepowered.api.profile.property.ProfileProperty.of(textureName, ""));
-        throw NotImplementedException.createByLazy(PlayerProfile.class, "getTextures");
+    public @NotNull SoakPlayerTextures getTextures() {
+        return new SoakPlayerTextures(this.profile, (profile) -> SoakPlayerProfile.this.profile = profile);
     }
 
     @Override
     public void setTextures(@Nullable PlayerTextures playerTextures) {
-        throw NotImplementedException.createByLazy(PlayerProfile.class, "setTextures");
+        if(playerTextures == null){
+            getTextures().clear();
+            return;
+        }
+        if(!(playerTextures instanceof SoakPlayerTextures spt)){
+            throw new IllegalStateException("PlayerTextures must be SoakPlayerTextures: Found " + playerTextures.getClass().getName());
+        }
+        getTextures().set(spt);
     }
 
     @Override
@@ -152,7 +155,8 @@ public class SoakPlayerProfile implements PlayerProfile {
 
     @Override
     public @NotNull CompletableFuture<PlayerProfile> update() {
-        throw NotImplementedException.createByLazy(PlayerProfile.class, "update");
+        //profile gets updated
+        return CompletableFuture.completedFuture(this);
     }
 
     @Override

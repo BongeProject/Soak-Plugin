@@ -52,7 +52,7 @@ public class SoakCreatureSpawnEvent {
         var reason = SoakSpawnReasonMap.toBukkit(type, event.cause());
 
         event.filterEntities(entity -> {
-            if (!(entity instanceof org.spongepowered.api.entity.living.Creature)) {
+            if (!(entity instanceof org.spongepowered.api.entity.living.PathfinderAgent)) {
                 return true;
             }
             Creature bukkitEntity = (Creature) AbstractEntity.wrap(entity);

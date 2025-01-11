@@ -7,6 +7,7 @@ import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import org.soak.exception.NotImplementedException;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.service.permission.Subject;
 import org.spongepowered.api.util.Tristate;
 
@@ -51,6 +52,7 @@ public class SoakPermissible implements Permissible {
 
     @Override
     public boolean hasPermission(@NotNull String arg0) {
+        var permissionService  = Sponge.server().serviceProvider().permissionService();
         return this.subject.hasPermission(arg0);
     }
 

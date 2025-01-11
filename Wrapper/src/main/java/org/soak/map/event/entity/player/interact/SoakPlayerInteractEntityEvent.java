@@ -50,7 +50,7 @@ public class SoakPlayerInteractEntityEvent {
     private void fireEvent(InteractEntityEvent spongeEvent, ServerPlayer spongePlayer, EventPriority priority) {
         var player = SoakManager.<WrapperManager>getManager().getMemoryStore().get(spongePlayer);
         var spongeEntity = spongeEvent.entity();
-        var entity = AbstractEntity.wrapEntity(spongeEntity);
+        var entity = AbstractEntity.wrap(spongeEntity);
         var spongeHand = spongeEvent.context()
                 .get(EventContextKeys.USED_HAND)
                 .orElseThrow(() -> new RuntimeException("Unknown hand type from event"));

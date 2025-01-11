@@ -3,14 +3,16 @@ package org.soak.plugin;
 import org.apache.logging.log4j.Logger;
 import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.bukkit.plugin.Plugin;
-import org.soak.Compatibility;
+import org.jetbrains.annotations.NotNull;
 import org.soak.exception.NMSUsageException;
+import org.soak.plugin.paper.loader.FoundClassLoader;
 import org.spongepowered.api.Platform;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.plugin.PluginContainer;
 
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -33,7 +35,11 @@ public interface SoakManager {
 
     Logger getLogger();
 
-    Stream<SoakPluginContainer> getBukkitContainers();
+    Collection<Class<?>> generatedClasses();
+
+    Stream<SoakPluginContainer> getBukkitSoakContainers();
+
+    Stream<PluginContainer> getBukkitPluginContainers();
 
     PluginContainer getOwnContainer();
 
@@ -43,14 +49,14 @@ public interface SoakManager {
 
     ArtifactVersion getVersion();
 
-    Compatibility getCompatibility();
+    @NotNull FoundClassLoader getSoakClassLoader(@NotNull SoakPluginContainer container);
 
-    default SoakPluginContainer getContainer(Plugin plugin) {
-        return getBukkitContainers().filter(pc -> pc.getBukkitInstance().equals(plugin)).findAny().orElseThrow(() -> new RuntimeException("A plugin instance was created for " + plugin.getName() + " but no container could be found"));
+    default SoakPluginContainer getSoakContainer(Plugin plugin) {
+        return getBukkitSoakContainers().filter(pc -> pc.getBukkitInstance().equals(plugin)).findAny().orElseThrow(() -> new RuntimeException("A plugin instance was created for " + plugin.getName() + " but no container could be found"));
     }
 
-    default Optional<SoakPluginContainer> getContainer(PluginContainer plugin){
-        return getBukkitContainers().filter(pc -> pc.equals(plugin) || pc.getTrueContainer().equals(plugin)).findAny();
+    default Optional<SoakPluginContainer> getSoakContainer(PluginContainer plugin) {
+        return getBukkitSoakContainers().filter(pc -> pc.equals(plugin) || pc.getTrueContainer().equals(plugin)).findAny();
     }
 
     default void displayError(Throwable e, File pluginFile) {
@@ -97,9 +103,6 @@ public interface SoakManager {
             logger.error("|- " + key + ": " + value);
         });
         logger.error("|- Soak version: " + this.getVersion().toString());
-        logger.error("|- Compatibility: " + this.getCompatibility().getName());
-        logger.error("|- Compatibility version: " + this.getCompatibility().getVersion());
-        logger.error("|- Compatibility Minecraft version: " + this.getCompatibility().getTargetMinecraftVersion());
         logger.error("|- Minecraft version: " + Sponge.platform().minecraftVersion().name());
         logger.error("|- Sponge API version: " + Sponge.platform()
                 .container(Platform.Component.API)

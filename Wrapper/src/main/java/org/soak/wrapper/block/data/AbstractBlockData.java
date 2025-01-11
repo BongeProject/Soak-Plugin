@@ -1,5 +1,6 @@
 package org.soak.wrapper.block.data;
 
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.SoundGroup;
@@ -11,12 +12,15 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.block.structure.Mirror;
 import org.bukkit.block.structure.StructureRotation;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.util.VoxelShape;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.soak.exception.NotImplementedException;
+import org.soak.map.SoakBlockMap;
 import org.soak.map.SoakMirrorMap;
 import org.soak.map.SoakRotationMap;
 import org.soak.wrapper.block.data.type.BlockDataTypes;
+import org.soak.wrapper.block.state.AbstractBlockState;
 import org.spongepowered.api.block.BlockState;
 import org.spongepowered.api.data.Keys;
 
@@ -39,6 +43,34 @@ public abstract class AbstractBlockData implements BlockData, CommonBlockData {
                  IllegalAccessException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public @NotNull VoxelShape getCollisionShape(@NotNull Location location) {
+        throw NotImplementedException.createByLazy(BlockData.class, "getCollisionShape", Location.class);
+    }
+
+    @Override
+    public @NotNull Color getMapColor() {
+        throw NotImplementedException.createByLazy(BlockData.class, "getMapColor");
+    }
+
+    @Override
+    public void copyTo(@NotNull BlockData blockData) {
+        if (!(blockData instanceof AbstractBlockData data)) {
+            throw new RuntimeException("Custom BlockData is not supported: " + blockData.getClass().getName());
+        }
+        this.spongeState = data.spongeState;
+    }
+
+    @Override
+    public org.bukkit.block.BlockState createBlockState() {
+        return AbstractBlockState.wrap(null, this.spongeState, true);
+    }
+
+    @Override
+    public float getDestroySpeed(@NotNull ItemStack itemStack, boolean b) {
+        throw NotImplementedException.createByLazy(BlockData.class, "getDestroySpeed", ItemStack.class, boolean.class);
     }
 
     @Override
@@ -126,7 +158,7 @@ public abstract class AbstractBlockData implements BlockData, CommonBlockData {
 
     @Override
     public @NotNull Material getMaterial() {
-        return Material.getBlockMaterial(this.spongeState.type());
+        return SoakBlockMap.toBukkit(this.spongeState.type());
     }
 
     @Override

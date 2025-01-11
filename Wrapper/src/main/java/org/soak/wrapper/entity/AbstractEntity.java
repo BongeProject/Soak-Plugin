@@ -1,6 +1,7 @@
 package org.soak.wrapper.entity;
 
 import io.papermc.paper.entity.TeleportFlag;
+import io.papermc.paper.threadedregions.scheduler.EntityScheduler;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import org.bukkit.*;
@@ -16,18 +17,22 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.mose.collection.stream.builder.CollectionStreamBuilder;
 import org.soak.WrapperManager;
 import org.soak.data.sponge.SoakKeys;
 import org.soak.exception.NotImplementedException;
+import org.soak.generate.bukkit.EntityTypeList;
+import org.soak.generate.bukkit.EntityTypeMappingEntry;
 import org.soak.map.SoakDirectionMap;
+import org.soak.map.SoakEntityMap;
 import org.soak.map.SoakMessageMap;
 import org.soak.map.SoakVectorMap;
 import org.soak.plugin.SoakManager;
+import org.soak.utils.GeneralHelper;
 import org.soak.utils.ListMappingUtils;
 import org.soak.wrapper.command.SoakCommandSender;
 import org.soak.wrapper.entity.living.AbstractLivingEntity;
-import org.soak.wrapper.entity.projectile.SoakFirework;
 import org.soak.wrapper.persistence.SoakMutablePersistentDataContainer;
 import org.soak.wrapper.world.SoakWorld;
 import org.spongepowered.api.Sponge;
@@ -36,9 +41,6 @@ import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.data.Keys;
 import org.spongepowered.api.data.value.Value;
 import org.spongepowered.api.entity.living.Living;
-import org.spongepowered.api.entity.living.player.server.ServerPlayer;
-import org.spongepowered.api.entity.projectile.explosive.FireworkRocket;
-import org.spongepowered.api.entity.weather.LightningBolt;
 import org.spongepowered.api.service.permission.Subject;
 import org.spongepowered.api.util.AABB;
 import org.spongepowered.api.util.Direction;
@@ -48,6 +50,7 @@ import org.spongepowered.api.world.weather.WeatherTypes;
 import org.spongepowered.math.vector.Vector3d;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
@@ -61,25 +64,20 @@ public abstract class AbstractEntity<E extends org.spongepowered.api.entity.Enti
         this.entity = entity;
     }
 
-    public static AbstractEntity<? extends org.spongepowered.api.entity.Entity> wrapEntity(org.spongepowered.api.entity.Entity entity) {
-        if (entity instanceof ServerPlayer) {
-            return SoakManager.<WrapperManager>getManager().getMemoryStore().get((ServerPlayer) entity);
+    private static <SE extends org.spongepowered.api.entity.Entity, SoakEntity extends Entity> SoakEntity wrapEntity(SE entity) {
+        EntityTypeMappingEntry<SE, SoakEntity> entityTypeMapping = (EntityTypeMappingEntry<SE, SoakEntity>) EntityTypeList.getEntityTypeMapping(entity.type());
+        if(!entityTypeMapping.isFinal()){
+            entityTypeMapping.updateWithSoakClass((Class<SE>)entity.getClass());
         }
-        if (entity instanceof FireworkRocket) {
-            return new SoakFirework(Sponge.systemSubject(), Sponge.systemSubject(), (FireworkRocket) entity);
-        }
-        if (entity instanceof LightningBolt bolt) {
-            return new SoakLightningStrike(bolt);
-        }
-        return new SoakEntity<>(Sponge.systemSubject(), Sponge.systemSubject(), entity);
+        return entityTypeMapping.createMapping(entity);
     }
 
     public static <E extends Living> AbstractLivingEntity<E> wrap(E living) {
-        return (AbstractLivingEntity<E>) (Object) wrap((org.spongepowered.api.entity.Entity) living);
+        return (AbstractLivingEntity<E>) (Object) wrapEntity(living);
     }
 
-    public static <E extends org.spongepowered.api.entity.Entity> AbstractEntity<E> wrap(E entity) {
-        return (AbstractEntity<E>) wrapEntity(entity);
+    public static <E extends org.spongepowered.api.entity.Entity> AbstractEntity<?> wrap(E entity) {
+        return wrapEntity(entity);
     }
 
     public E spongeEntity() {
@@ -166,7 +164,7 @@ public abstract class AbstractEntity<E extends org.spongepowered.api.entity.Enti
 
     @Override
     public @NotNull EntityType getType() {
-        return EntityType.fromSponge(this.entity.type());
+        return SoakEntityMap.toBukkit(this.entity.type());
     }
 
     @Override
@@ -687,5 +685,117 @@ public abstract class AbstractEntity<E extends org.spongepowered.api.entity.Enti
     @Override
     public @NotNull PersistentDataContainer getPersistentDataContainer() {
         return new SoakMutablePersistentDataContainer<>(this.entity);
+    }
+
+    @Override
+    public @NotNull CompletableFuture<Boolean> teleportAsync(@NotNull Location location, @NotNull PlayerTeleportEvent.TeleportCause teleportCause, @NotNull TeleportFlag @NotNull ... teleportFlags) {
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+        var plugin = GeneralHelper.fromStackTrace();
+
+        Sponge.server().scheduler().executor(plugin).submit(() -> {
+            boolean tel = teleport(location, teleportCause, teleportFlags);
+            future.complete(tel);
+        });
+        return future;
+    }
+
+    @Override
+    public boolean isInvisible() {
+        return false;
+    }
+
+    @Override
+    public void setInvisible(boolean b) {
+
+    }
+
+    @Override
+    public void setNoPhysics(boolean b) {
+
+    }
+
+    @Override
+    public boolean hasNoPhysics() {
+        return false;
+    }
+
+    @Override
+    public @NotNull Set<Player> getTrackedBy() {
+        return Set.of();
+    }
+
+    @Override
+    public void setPose(@NotNull Pose pose, boolean b) {
+
+    }
+
+    @Override
+    public boolean hasFixedPose() {
+        return false;
+    }
+
+    @Override
+    public boolean isInWorld() {
+        return false;
+    }
+
+    @Override
+    public @Nullable String getAsString() {
+        return "";
+    }
+
+    @Override
+    public @Nullable EntitySnapshot createSnapshot() {
+        return null;
+    }
+
+    @Override
+    public org.bukkit.entity.@NotNull Entity copy() {
+        return null;
+    }
+
+    @Override
+    public org.bukkit.entity.@NotNull Entity copy(@NotNull Location location) {
+        return null;
+    }
+
+    @Override
+    public double getX() {
+        return 0;
+    }
+
+    @Override
+    public double getY() {
+        return 0;
+    }
+
+    @Override
+    public double getZ() {
+        return 0;
+    }
+
+    @Override
+    public float getPitch() {
+        return 0;
+    }
+
+    @Override
+    public float getYaw() {
+        return 0;
+    }
+
+    @Override
+    public @NotNull EntityScheduler getScheduler() {
+        return null;
+    }
+
+    @Override
+    public @NotNull String getScoreboardEntryName() {
+        return "";
+    }
+
+    @Override
+    public void broadcastHurtAnimation(@NotNull Collection<Player> collection) {
+
     }
 }

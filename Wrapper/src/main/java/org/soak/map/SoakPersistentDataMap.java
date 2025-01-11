@@ -8,7 +8,7 @@ public class SoakPersistentDataMap {
 
     public static <T> BukkitDataType<T> toSoak(PersistentDataType<?, T> dataType) {
         return BukkitDataTypes.TYPES
-                .get()
+                .values()
                 .parallelStream()
                 .filter(type -> type.toBukkit().equals(dataType))
                 .findAny()

@@ -15,18 +15,18 @@ import org.spongepowered.api.item.recipe.single.StoneCutterRecipe;
 import org.spongepowered.api.registry.RegistryTypes;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public class SoakRecipeMap {
 
-    public static Recipe toBukkit(org.spongepowered.api.item.recipe.Recipe recipe) {
-        NamespacedKey key = SoakResourceKeyMap.mapToBukkit(recipe.key());
+    public static Recipe toBukkit(org.spongepowered.api.item.recipe.Recipe<?> recipe) {
+        NamespacedKey key = SoakResourceKeyMap.mapToBukkit(recipe.type().key(RegistryTypes.RECIPE_TYPE));
         var result = SoakItemStackMap.toBukkit(recipe.exemplaryResult());
-        var inputs = recipe.ingredients();
+        List<Ingredient> inputs = recipe.ingredients();
 
-        if (recipe instanceof CookingRecipe) {
-            var cooking = (CookingRecipe) recipe;
-            var input = Material.getItemMaterial(inputs.get(0).displayedItems().get(0).type());
+        if (recipe instanceof CookingRecipe cooking) {
+            var input = SoakItemStackMap.toBukkit(cooking.ingredient().displayedItems().getFirst().type());
             if (cooking.type().equals(RecipeTypes.SMELTING.get())) {
                 return new FurnaceRecipe(key,
                         result,
@@ -56,8 +56,8 @@ public class SoakRecipeMap {
                         (int) cooking.cookingTime().ticks());
             }
         }
-        if (recipe instanceof StoneCutterRecipe) {
-            var input = Material.getItemMaterial(inputs.get(0).displayedItems().get(0).type());
+        if (recipe instanceof StoneCutterRecipe stoneCutterRecipe) {
+            var input = SoakItemStackMap.toBukkit(stoneCutterRecipe.ingredients().getFirst().displayedItems().getFirst().type());
             return new StonecuttingRecipe(key, result, input);
         }
 
@@ -66,8 +66,7 @@ public class SoakRecipeMap {
         }
 
 
-        if (recipe instanceof ShapedCraftingRecipe) {
-            var shapedCrafting = (ShapedCraftingRecipe) recipe;
+        if (recipe instanceof ShapedCraftingRecipe shapedCrafting) {
             var shaped = new ShapedRecipe(key, result);
             int i = 0;
             Map<Integer, String> characterMap = new LinkedHashMap<>();
@@ -83,7 +82,7 @@ public class SoakRecipeMap {
                     if (items.isEmpty()) {
                         continue;
                     }
-                    ingredients.put(c, SoakItemStackMap.toBukkit(items.get(0)));
+                    ingredients.put(c, SoakItemStackMap.toBukkit(items.getFirst()));
                 }
             }
             shaped.shape(characterMap.values().toArray(new String[0]));
@@ -96,7 +95,7 @@ public class SoakRecipeMap {
             inputs.stream()
                     .map(Ingredient::displayedItems)
                     .filter(in -> !in.isEmpty())
-                    .map(in -> in.get(0))
+                    .map(List::getFirst)
                     .map(SoakItemStackMap::toBukkit)
                     .forEach(shapeless::addIngredient);
             return shapeless;

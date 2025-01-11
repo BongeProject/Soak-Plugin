@@ -1,31 +1,21 @@
 package org.soak.data.type;
 
-import org.soak.utils.Singleton;
-
-import java.lang.reflect.Modifier;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Objects;
-import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.Map;
 
 public class BukkitDataTypes {
 
-    public static final BukkitStringDataType STRING = new BukkitStringDataType();
-    public static final BukkitByteDataType BYTE = new BukkitByteDataType();
+    public static final Map<Class<?>, BukkitDataType<?>> TYPES = new HashMap<>();
 
-    public static Singleton<Collection<BukkitDataType<?>>> TYPES = new Singleton<>(() -> Arrays.stream(BukkitDataTypes.class.getDeclaredFields())
-            .filter(field -> Modifier.isPublic(field.getModifiers()))
-            .filter(field -> Modifier.isStatic(field.getModifiers()))
-            .filter(field -> Modifier.isFinal(field.getModifiers()))
-            .filter(field -> BukkitDataType.class.isAssignableFrom(field.getType()))
-            .map(field -> {
-                try {
-                    return (BukkitDataType<?>) field.get(null);
-                } catch (IllegalAccessException e) {
-                    e.printStackTrace();
-                    return null;
-                }
-            })
-            .filter(Objects::nonNull)
-            .collect(Collectors.toList()));
+    public static final BukkitStringDataType STRING = register(new BukkitStringDataType());
+    public static final BukkitByteDataType BYTE = register(new BukkitByteDataType());
+    public static final BukkitBooleanDataType BOOLEAN = register(new BukkitBooleanDataType());
+    public static final BukkitFloatDataType FLOAT = register(new BukkitFloatDataType());
+    public static final BukkitDataContainerDataType DATA_CONTAINER = register(new BukkitDataContainerDataType());
+
+
+    private static <T extends BukkitDataType<?>> T register(T type) {
+        TYPES.put(type.typeClass(), type);
+        return type;
+    }
 }

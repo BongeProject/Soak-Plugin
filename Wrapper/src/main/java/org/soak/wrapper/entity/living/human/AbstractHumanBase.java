@@ -6,14 +6,18 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Sign;
+import org.bukkit.block.sign.Side;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.soak.exception.NotImplementedException;
+import org.soak.map.SoakGameModeMap;
 import org.soak.wrapper.entity.living.AbstractLivingEntity;
 import org.spongepowered.api.data.Keys;
 import org.spongepowered.api.entity.living.Humanoid;
+import org.spongepowered.api.item.inventory.equipment.EquipmentTypes;
+import org.spongepowered.api.registry.RegistryTypes;
 import org.spongepowered.api.service.permission.Subject;
 
 import java.util.Collection;
@@ -23,6 +27,23 @@ public abstract class AbstractHumanBase<E extends Humanoid> extends AbstractLivi
 
     public AbstractHumanBase(Subject subject, Audience audience, E entity) {
         super(subject, audience, entity);
+    }
+
+    @Override
+    public void startRiptideAttack(int i, float v, @Nullable ItemStack itemStack) {
+        throw NotImplementedException.createByLazy(HumanEntity.class, "startRiptideAttack", int.class, float.class, ItemStack.class);
+    }
+
+    @Override
+    public boolean canUseEquipmentSlot(@NotNull EquipmentSlot equipmentSlot) {
+        var equipmentType = EquipmentTypes
+                .registry()
+                .stream()
+                .filter(type -> equipmentSlot.name().equalsIgnoreCase(type.key(RegistryTypes.EQUIPMENT_TYPE).value()))
+                .findAny()
+                .orElseThrow();
+        //TODO move to map
+        return this.entity.canEquip(equipmentType);
     }
 
     @Override
@@ -58,7 +79,6 @@ public abstract class AbstractHumanBase<E extends Humanoid> extends AbstractLivi
     @Override
     public @Nullable Firework fireworkBoost(@NotNull ItemStack itemStack) {
         throw NotImplementedException.createByLazy(HumanEntity.class, "fireworkBoost", ItemStack.class);
-
     }
 
     @Deprecated
@@ -220,12 +240,12 @@ public abstract class AbstractHumanBase<E extends Humanoid> extends AbstractLivi
                 .get(Keys.GAME_MODE)
                 .orElseThrow(() -> new RuntimeException("Cannot get Gamemode from " + spongeEntity().getClass()
                         .getName()));
-        return GameMode.sponge(spongeMode);
+        return SoakGameModeMap.toBukkit(spongeMode);
     }
 
     @Override
     public void setGameMode(@NotNull GameMode arg0) {
-        this.spongeEntity().offer(Keys.GAME_MODE, arg0.sponge());
+        this.spongeEntity().offer(Keys.GAME_MODE, SoakGameModeMap.toSponge(arg0));
     }
 
     @Override
@@ -298,6 +318,11 @@ public abstract class AbstractHumanBase<E extends Humanoid> extends AbstractLivi
     @Override
     public void openSign(Sign arg0) {
         throw NotImplementedException.createByLazy(HumanEntity.class, "openSign", Sign.class);
+    }
+
+    @Override
+    public void openSign(@NotNull Sign sign, @NotNull Side side) {
+        throw NotImplementedException.createByLazy(HumanEntity.class, "openSign", Sign.class, Side.class);
     }
 
     @Override

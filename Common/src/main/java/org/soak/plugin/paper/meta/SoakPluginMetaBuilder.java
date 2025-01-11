@@ -1,6 +1,8 @@
 package org.soak.plugin.paper.meta;
 
+import io.papermc.paper.plugin.configuration.PluginMeta;
 import org.bukkit.permissions.Permission;
+import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginLoadOrder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -24,6 +26,7 @@ public class SoakPluginMetaBuilder {
     private String website;
     private Map<String, DependType> pluginDepends = new ConcurrentHashMap<>();
     private List<Permission> permissions = new ArrayList<>();
+    private List<String> libraries = new ArrayList<>();
 
     public SoakPluginMetaBuilder from(PluginContainer container) {
         this.name = container.metadata().name().orElseGet(() -> container.metadata().id());
@@ -35,8 +38,39 @@ public class SoakPluginMetaBuilder {
         return this;
     }
 
+    public SoakPluginMetaBuilder from(PluginMeta meta){
+        this.name = meta.getName();
+        this.description = meta.getDescription();
+        this.version = meta.getVersion();
+        this.prefix = meta.getLoggerPrefix();
+        this.website = meta.getWebsite();
+        this.apiVersion = meta.getAPIVersion();
+        this.loadOrder = meta.getLoadOrder();
+        this.main = meta.getMainClass();
+        this.permissions = meta.getPermissions();
+        meta.getPluginDependencies().forEach(depend -> pluginDepends.put(depend, DependType.LOAD_AFTER));
+        meta.getPluginSoftDependencies().forEach(depend -> pluginDepends.put(depend, DependType.SOFT_LOAD_AFTER));
+        meta.getLoadBeforePlugins().forEach(depend -> pluginDepends.put(depend, DependType.SOFT_LOAD_BEFORE));
+        if(meta instanceof SoakPluginMeta spm){
+            this.libraries = spm.getLibraries();
+        }
+        if(meta instanceof PluginDescriptionFile pdf){
+            this.libraries = pdf.getLibraries();
+        }
+        return this;
+    }
+
     public SoakPluginMeta build() {
         return new SoakPluginMeta(this);
+    }
+
+    public List<String> getLibraries(){
+        return this.libraries;
+    }
+
+    public SoakPluginMetaBuilder setLibraries(Collection<String> libraries){
+        this.libraries = new ArrayList<>(libraries);
+        return this;
     }
 
     public String getName() {

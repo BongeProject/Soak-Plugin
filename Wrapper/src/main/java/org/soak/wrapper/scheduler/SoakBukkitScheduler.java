@@ -59,7 +59,7 @@ public class SoakBukkitScheduler implements BukkitScheduler {
     }
 
     private int scheduleRepeatingTask(Scheduler scheduler, Plugin plugin, Runnable runner, long delay, long period) {
-        SoakPluginContainer container = SoakManager.getManager().getContainer(plugin);
+        SoakPluginContainer container = SoakManager.getManager().getSoakContainer(plugin);
 
         Task task = Task.builder()
                 .delay(Ticks.duration(delay))
@@ -87,7 +87,7 @@ public class SoakBukkitScheduler implements BukkitScheduler {
 
     @Override
     public void cancelTasks(@NotNull Plugin arg0) {
-        SoakPluginContainer container = SoakManager.getManager().getContainer(arg0);
+        SoakPluginContainer container = SoakManager.getManager().getSoakContainer(arg0);
         apply(sch -> sch.tasks(container).forEach(ScheduledTask::cancel));
     }
 
@@ -114,13 +114,13 @@ public class SoakBukkitScheduler implements BukkitScheduler {
     }
 
     private BukkitTask runTask(Scheduler scheduler, Plugin plugin, Runnable runner) {
-        SoakPluginContainer container = SoakManager.getManager().getContainer(plugin);
+        SoakPluginContainer container = SoakManager.getManager().getSoakContainer(plugin);
         TaskFuture<?> task = scheduler.executor(container).submit(new SoakRunnerWrapper(plugin, runner));
         return new SoakBukkitTask(task.task());
     }
 
     @Override
-    public void runTask(@NotNull Plugin plugin, @NotNull Consumer<BukkitTask> task) throws IllegalArgumentException {
+    public void runTask(@NotNull Plugin plugin, @NotNull Consumer<? super BukkitTask> task) throws IllegalArgumentException {
         throw NotImplementedException.createByLazy(BukkitScheduler.class, "runTask", Plugin.class, Consumer.class);
     }
 
@@ -131,7 +131,7 @@ public class SoakBukkitScheduler implements BukkitScheduler {
     }
 
     @Override
-    public void runTaskAsynchronously(@NotNull Plugin plugin, @NotNull Consumer<BukkitTask> task) throws IllegalArgumentException {
+    public void runTaskAsynchronously(@NotNull Plugin plugin, @NotNull Consumer<? super BukkitTask> task) throws IllegalArgumentException {
         throw NotImplementedException.createByLazy(BukkitScheduler.class, "runTaskAsynchronously", Plugin.class, Consumer.class);
     }
 
@@ -146,13 +146,13 @@ public class SoakBukkitScheduler implements BukkitScheduler {
     }
 
     private @NotNull BukkitTask runTaskLater(Scheduler scheduler, Plugin plugin, Runnable runner, long delay) {
-        SoakPluginContainer container = SoakManager.getManager().getContainer(plugin);
+        SoakPluginContainer container = SoakManager.getManager().getSoakContainer(plugin);
         TaskFuture<?> task = scheduler.executor(container).schedule(new SoakRunnerWrapper(plugin, runner), delay / Ticks.SINGLE_TICK_DURATION_MS, TimeUnit.MILLISECONDS);
         return new SoakBukkitTask(task.task());
     }
 
     @Override
-    public void runTaskLater(@NotNull Plugin plugin, @NotNull Consumer<BukkitTask> task, long delay) throws IllegalArgumentException {
+    public void runTaskLater(@NotNull Plugin plugin, @NotNull Consumer<? super BukkitTask> task, long delay) throws IllegalArgumentException {
         throw NotImplementedException.createByLazy(BukkitScheduler.class, "runTaskLater", Plugin.class, Consumer.class, long.class);
     }
 
@@ -174,12 +174,12 @@ public class SoakBukkitScheduler implements BukkitScheduler {
     }
 
     @Override
-    public void runTaskLaterAsynchronously(@NotNull Plugin plugin, @NotNull Consumer<BukkitTask> task, long delay) throws IllegalArgumentException {
+    public void runTaskLaterAsynchronously(@NotNull Plugin plugin, @NotNull Consumer<? super BukkitTask> task, long delay) throws IllegalArgumentException {
         throw NotImplementedException.createByLazy(BukkitScheduler.class, "runTaskLaterAsynchronously", Plugin.class, Consumer.class, long.class);
     }
 
     @Override
-    public void runTaskTimer(@NotNull Plugin plugin, @NotNull Consumer<BukkitTask> task, long delay, long period) throws IllegalArgumentException {
+    public void runTaskTimer(@NotNull Plugin plugin, @NotNull Consumer<? super BukkitTask> task, long delay, long period) throws IllegalArgumentException {
         throw NotImplementedException.createByLazy(BukkitScheduler.class, "runTaskTimer", Plugin.class, Consumer.class, long.class, long.class);
     }
 
@@ -199,7 +199,7 @@ public class SoakBukkitScheduler implements BukkitScheduler {
             //sponge takes a 0 interval as a delay, however this should always create a repeating task
             interval = 1;
         }
-        SoakPluginContainer container = SoakManager.getManager().getContainer(plugin);
+        SoakPluginContainer container = SoakManager.getManager().getSoakContainer(plugin);
         Task task = Task.builder()
                 .plugin(container)
                 .execute(new SoakRunnerWrapper(plugin, runner))
@@ -222,7 +222,7 @@ public class SoakBukkitScheduler implements BukkitScheduler {
     }
 
     @Override
-    public void runTaskTimerAsynchronously(@NotNull Plugin plugin, @NotNull Consumer<BukkitTask> task, long delay, long period) throws IllegalArgumentException {
+    public void runTaskTimerAsynchronously(@NotNull Plugin plugin, @NotNull Consumer<? super BukkitTask> task, long delay, long period) throws IllegalArgumentException {
         throw NotImplementedException.createByLazy(BukkitScheduler.class, "runTaskTimerAsynchronously", Plugin.class, Consumer.class, long.class, long.class);
     }
 
@@ -232,7 +232,7 @@ public class SoakBukkitScheduler implements BukkitScheduler {
     }
 
     public SoakBukkitTask scheduleDelayTask(Scheduler scheduler, Plugin plugin, Runnable runnable, long delay) {
-        var pluginContainer = SoakManager.getManager().getContainer(plugin);
+        var pluginContainer = SoakManager.getManager().getSoakContainer(plugin);
         var ticks = Ticks.duration(delay);
         var spongeTask = scheduler.executor(pluginContainer).schedule(runnable, ticks.toMillis(), TimeUnit.MILLISECONDS);
         return new SoakBukkitTask(spongeTask.task());

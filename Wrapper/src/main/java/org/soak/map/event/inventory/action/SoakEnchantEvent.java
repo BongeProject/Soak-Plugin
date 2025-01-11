@@ -7,7 +7,7 @@ import org.soak.map.item.SoakEnchantmentTypeMap;
 import org.soak.map.item.SoakItemStackMap;
 import org.soak.plugin.SoakManager;
 import org.soak.wrapper.block.SoakBlock;
-import org.soak.wrapper.inventory.SoakInventoryView;
+import org.soak.wrapper.inventory.view.AbstractInventoryView;
 import org.spongepowered.api.entity.living.player.server.ServerPlayer;
 import org.spongepowered.api.event.EventContextKeys;
 import org.spongepowered.api.event.Listener;
@@ -54,7 +54,7 @@ public class SoakEnchantEvent {
 
     private void fireEvent(EnchantItemEvent.CalculateEnchantment event, ServerPlayer serverPlayer, EventPriority priority) {
         var player = SoakManager.<WrapperManager>getManager().getMemoryStore().get(serverPlayer);
-        var view = new SoakInventoryView(event.container());
+        var view = AbstractInventoryView.wrap(event.container());
         SoakBlock enchantmentTable = event.context()
                 .get(EventContextKeys.BLOCK_EVENT_PROCESS)
                 .flatMap(lb -> lb.location().onServer())
@@ -73,6 +73,8 @@ public class SoakEnchantEvent {
                 item,
                 event.levelRequirement(),
                 enchantments,
+                org.bukkit.enchantments.Enchantment.WIND_BURST, //TODO correct this
+                1, //TODO correct this
                 event.option());
         SoakManager.<WrapperManager>getManager().getServer().getSoakPluginManager().callEvent(this.singleEventListener, bukkitEvent, priority);
 

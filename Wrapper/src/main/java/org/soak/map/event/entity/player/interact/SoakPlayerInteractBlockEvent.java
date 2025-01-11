@@ -4,6 +4,7 @@ import org.bukkit.Location;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.util.Vector;
 import org.soak.WrapperManager;
 import org.soak.map.event.EventSingleListenerWrapper;
 import org.soak.map.SoakActionMap;
@@ -55,7 +56,7 @@ public class SoakPlayerInteractBlockEvent {
     private void fireEvent(InteractBlockEvent spongeEvent, ServerPlayer spongePlayer, EventPriority priority) {
         var player = SoakManager.<WrapperManager>getManager().getMemoryStore().get(spongePlayer);
         var spongePosition = spongeEvent.block().position();
-        var interactionPoint = new Location(player.getWorld(),
+        var interactionPoint = new Vector(
                 spongePosition.x(),
                 spongePosition.y(),
                 spongePosition.z());

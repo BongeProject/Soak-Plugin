@@ -13,13 +13,6 @@ public class SoakEnchantmentTypeMap {
     //despite both bukkit and sponge having a way to get based on Key, both Sponge and Bukkit don't share the same keys for everything ... so enjoy the if statements for exceptions
 
     public static EnchantmentType toSponge(Enchantment enchantment) {
-        if (enchantment.equals(Enchantment.DURABILITY)) {
-            return EnchantmentTypes.UNBREAKING.get();
-        }
-        if (enchantment.equals(Enchantment.PROTECTION_ENVIRONMENTAL)) {
-            return EnchantmentTypes.PROTECTION.get();
-        }
-
         ResourceKey keyType = SoakResourceKeyMap.mapToSponge(enchantment.getKey());
         return RegistryTypes.ENCHANTMENT_TYPE.get().value(keyType);
     }

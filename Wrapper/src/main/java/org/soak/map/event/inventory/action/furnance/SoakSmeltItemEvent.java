@@ -61,17 +61,16 @@ public class SoakSmeltItemEvent {
                         SoakItemStackMap::toBukkit)
                 .orElseThrow(() -> new RuntimeException("Could not find the before item"));
         var recipe = (CookingRecipe<?>) event.recipe().map(SoakRecipeMap::toBukkit).orElse(null);
-        if (event.cookedItems().size() != 1) {
-            throw new RuntimeException("Furnace cooked " + event.cookedItems().size() + " itemstacks");
+        if (event.transactions().size() != 1) {
+            throw new RuntimeException("Furnace cooked " + event.transactions().size() + " itemstacks");
         }
-        var result = SoakItemStackMap.toBukkit(event.cookedItems().get(0));
+        var result = SoakItemStackMap.toBukkit(event.transactions().get(0).finalReplacement());
         var bukkitEvent = new FurnaceSmeltEvent(furnace, original, result, recipe);
 
         SoakManager.<WrapperManager>getManager().getServer().getSoakPluginManager().callEvent(this.singleEventListener, bukkitEvent, priority);
 
-        /*if (bukkitEvent.isCancelled()) {
+        if (bukkitEvent.isCancelled()) {
             event.setCancelled(true);
-        }*/
-        //TODO cancel this event .... somehow
+        }
     }
 }

@@ -1,6 +1,7 @@
 package org.soak.plugin.loader.common;
 
 import io.papermc.paper.plugin.configuration.PluginMeta;
+import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import org.bukkit.Server;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -10,8 +11,10 @@ import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.*;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.soak.exception.NotImplementedException;
 import org.soak.plugin.SoakPlugin;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.plugin.PluginContainer;
@@ -100,7 +103,7 @@ public class SpongeJavaPlugin implements Plugin {
 
     @Override
     public @Nullable InputStream getResource(@NotNull String s) {
-        return this.container.openResource(URI.create(s)).orElse(null);
+        return this.container.openResource(s).orElse(null);
     }
 
     @Override
@@ -181,6 +184,11 @@ public class SpongeJavaPlugin implements Plugin {
     @Override
     public @NotNull String getName() {
         return this.getDescription().getName();
+    }
+
+    @Override
+    public @NotNull LifecycleEventManager<Plugin> getLifecycleManager() {
+        throw NotImplementedException.createByLazy(JavaPlugin.class, "getLifecycleManager");
     }
 
     @Override

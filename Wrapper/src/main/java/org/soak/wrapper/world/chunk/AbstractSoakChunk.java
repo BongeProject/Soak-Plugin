@@ -7,17 +7,23 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
+import org.bukkit.generator.structure.GeneratedStructure;
+import org.bukkit.generator.structure.Structure;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
+import org.mose.collection.stream.builder.CollectionStreamBuilder;
 import org.soak.WrapperManager;
 import org.soak.exception.NotImplementedException;
 import org.soak.plugin.SoakManager;
+import org.soak.utils.ListMappingUtils;
 import org.soak.wrapper.block.data.SoakBlockData;
-import org.soak.wrapper.block.state.AbstractBlockSnapshotState;
 import org.soak.wrapper.block.state.AbstractBlockState;
 import org.soak.wrapper.entity.SoakEntity;
 import org.soak.wrapper.world.SoakWorld;
+import org.spongepowered.api.data.Keys;
+import org.spongepowered.api.entity.living.player.server.ServerPlayer;
 import org.spongepowered.api.util.Ticks;
 import org.spongepowered.api.world.chunk.WorldChunk;
 import org.spongepowered.api.world.server.ServerWorld;
@@ -25,6 +31,7 @@ import org.spongepowered.api.world.volume.stream.StreamOptions;
 import org.spongepowered.math.vector.Vector2i;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -69,6 +76,12 @@ public class AbstractSoakChunk implements SoakChunk {
     }
 
     @Override
+    public @NotNull ChunkSnapshot getChunkSnapshot(boolean b, boolean b1, boolean b2, boolean b3) {
+        //TODO parameters
+        return getChunkSnapshot();
+    }
+
+    @Override
     public boolean isEntitiesLoaded() {
         return !this.chunk.entities().isEmpty();
     }
@@ -84,17 +97,21 @@ public class AbstractSoakChunk implements SoakChunk {
     }
 
     @Override
-    public @NotNull Collection<BlockState> getTileEntities(@NotNull Predicate<Block> predicate, boolean useSnapshots) {
-        return getBlockEntities(state -> predicate.test(state.getBlock()), useSnapshots).collect(Collectors.toList());
+    public @NotNull Collection<BlockState> getTileEntities(@NotNull Predicate<? super Block> predicate, boolean useSnapshots) {
+        return getBlockEntities(state -> {
+            var t = state.getBlock();
+            return predicate.test(t);
+        }, useSnapshots).collect(Collectors.toList());
     }
 
-    private @NotNull Stream<BlockState> getBlockEntities(@NotNull Predicate<AbstractBlockState<?>> predicate, boolean useSnapshots) {
-        return this.chunk.blockEntities().stream().map(blockEntity -> (AbstractBlockState<?>) AbstractBlockState.wrap(blockEntity, false)).filter(predicate).map(state -> {
-            if (useSnapshots) {
-                return AbstractBlockSnapshotState.wrap(state.sponge().serverLocation().createSnapshot());
-            }
-            return state;
-        });
+    private @NotNull Stream<BlockState> getBlockEntities(@NotNull Predicate<AbstractBlockState> predicate, boolean useSnapshots) {
+        return this
+                .chunk
+                .blockEntities()
+                .stream()
+                .map(blockEntity -> (AbstractBlockState) AbstractBlockState.wrap(blockEntity.serverLocation(), blockEntity.block(), useSnapshots))
+                .filter(predicate)
+                .map(state -> state);
     }
 
     @Override
@@ -204,6 +221,28 @@ public class AbstractSoakChunk implements SoakChunk {
     @Override
     public LoadLevel getLoadLevel() {
         throw NotImplementedException.createByLazy(Chunk.class, "getLoadLevel");
+    }
+
+    @Override
+    public @NotNull Collection<GeneratedStructure> getStructures() {
+        throw NotImplementedException.createByLazy(Chunk.class, "getStructures");
+    }
+
+    @Override
+    public @NotNull Collection<GeneratedStructure> getStructures(@NotNull Structure structure) {
+        throw NotImplementedException.createByLazy(Chunk.class, "getStructures", Structure.class);
+    }
+
+    @Override
+    public @NotNull Collection<Player> getPlayersSeeingChunk() {
+        var chunkPosition = this.chunk.chunkPosition();
+        var chunks = this.chunk.world().players().stream().filter(player -> {
+            var viewDistance = player.get(Keys.VIEW_DISTANCE).orElse(2);
+            var playerChunkPosition = player.serverLocation().chunkPosition();
+            return playerChunkPosition.distanceSquared(chunkPosition) <= viewDistance;
+        }).map(player -> (ServerPlayer)player);
+
+        return CollectionStreamBuilder.builder().stream(chunks).basicMap(player -> (Player)SoakManager.<WrapperManager>getManager().getMemoryStore().get(player)).buildSet();
     }
 
     @Override

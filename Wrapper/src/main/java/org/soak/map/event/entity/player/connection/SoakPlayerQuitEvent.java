@@ -18,32 +18,32 @@ public class SoakPlayerQuitEvent {
     }
 
     @Listener(order = Order.FIRST)
-    public void firstEvent(ServerSideConnectionEvent.Disconnect spongeEvent) {
+    public void firstEvent(ServerSideConnectionEvent.Leave spongeEvent) {
         fireEvent(spongeEvent, EventPriority.HIGHEST);
     }
 
     @Listener(order = Order.EARLY)
-    public void earlyEvent(ServerSideConnectionEvent.Disconnect spongeEvent) {
+    public void earlyEvent(ServerSideConnectionEvent.Leave spongeEvent) {
         fireEvent(spongeEvent, EventPriority.HIGH);
     }
 
     @Listener(order = Order.DEFAULT)
-    public void normalEvent(ServerSideConnectionEvent.Disconnect spongeEvent) {
+    public void normalEvent(ServerSideConnectionEvent.Leave spongeEvent) {
         fireEvent(spongeEvent, EventPriority.NORMAL);
     }
 
     @Listener(order = Order.LATE)
-    public void lateEvent(ServerSideConnectionEvent.Disconnect spongeEvent) {
+    public void lateEvent(ServerSideConnectionEvent.Leave spongeEvent) {
         fireEvent(spongeEvent, EventPriority.LOW);
     }
 
     @Listener(order = Order.LAST)
-    public void lastEvent(ServerSideConnectionEvent.Disconnect spongeEvent) {
+    public void lastEvent(ServerSideConnectionEvent.Leave spongeEvent) {
         fireEvent(spongeEvent, EventPriority.LOWEST);
     }
 
 
-    private void fireEvent(ServerSideConnectionEvent.Disconnect event, EventPriority priority) {
+    private void fireEvent(ServerSideConnectionEvent.Leave event, EventPriority priority) {
         var player = SoakManager.<WrapperManager>getManager().getMemoryStore().get(event.player());
         var message = event.message();
 

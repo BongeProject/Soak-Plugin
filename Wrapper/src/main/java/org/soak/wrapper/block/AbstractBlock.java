@@ -9,6 +9,7 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.soak.WrapperManager;
+import org.soak.map.SoakBlockMap;
 import org.soak.map.SoakDirectionMap;
 import org.soak.map.item.SoakItemStackMap;
 import org.soak.plugin.SoakManager;
@@ -53,7 +54,7 @@ public abstract class AbstractBlock<Holder extends DataHolder> implements Block 
 
     @Override
     public @NotNull Material getType() {
-        return Material.getBlockMaterial(this.spongeBlockState().type());
+        return SoakBlockMap.toBukkit(this.spongeBlockState().type());
     }
 
     @Override

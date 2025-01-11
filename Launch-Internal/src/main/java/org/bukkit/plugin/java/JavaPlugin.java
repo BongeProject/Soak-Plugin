@@ -86,7 +86,7 @@ public abstract class JavaPlugin extends PluginBase {
                     return clazz.cast(plugin);
                 }
             } else {
-                return (T) SoakManager.getManager().getBukkitContainers().findAny().orElseThrow(() -> new RuntimeException("Cannot get main SoakPluginContainer")).getBukkitInstance();
+                return (T) SoakManager.getManager().getBukkitSoakContainers().findAny().orElseThrow(() -> new RuntimeException("Cannot get main SoakPluginContainer")).getBukkitInstance();
             }
         }
     }
@@ -98,7 +98,7 @@ public abstract class JavaPlugin extends PluginBase {
             JavaPlugin plugin = configuredPluginClassLoader.getPlugin();
             return plugin;
         } else {
-            return SoakManager.getManager().getBukkitContainers().findAny().orElseThrow(() -> new RuntimeException("Cannot get main SoakPluginContainer")).getBukkitInstance();
+            return SoakManager.getManager().getBukkitSoakContainers().findAny().orElseThrow(() -> new RuntimeException("Cannot get main SoakPluginContainer")).getBukkitInstance();
         }
     }
 

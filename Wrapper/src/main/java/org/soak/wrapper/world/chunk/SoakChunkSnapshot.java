@@ -7,6 +7,7 @@ import org.bukkit.block.data.BlockData;
 import org.jetbrains.annotations.NotNull;
 import org.soak.WrapperManager;
 import org.soak.exception.NotImplementedException;
+import org.soak.map.SoakBiomeMap;
 import org.soak.plugin.SoakManager;
 import org.spongepowered.api.world.LightTypes;
 import org.spongepowered.api.world.chunk.ChunkStates;
@@ -88,7 +89,7 @@ public class SoakChunkSnapshot implements ChunkSnapshot {
     public @NotNull Biome getBiome(int x, int y, int z) {
         var minBlock = this.chunk.min();
         var spongeBiome = this.chunk.biome(x + minBlock.x(), y, z + minBlock.y());
-        return Biome.fromSponge(spongeBiome);
+        return SoakBiomeMap.toBukkit(spongeBiome);
     }
 
     @Override
