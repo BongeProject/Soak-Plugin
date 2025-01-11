@@ -35,7 +35,7 @@ public class NotImplementedException extends RuntimeException {
         try {
             throw new NotImplementedException(from, name, parameters);
         } catch (NoSuchMethodException e) {
-            throw new RuntimeException("Could not create NotImplementedException", e);
+            throw new RuntimeException("Could not create NotImplementedException for " + from.getSimpleName() + "#" + name + "(" + Arrays.stream(parameters).map(parameter -> parameter.getSimpleName() + " arg").collect(Collectors.joining(", ")) + ")", e);
         }
     }
 

@@ -145,7 +145,7 @@ public class AbstractSpongePluginMain implements SoakInternalManager, WrapperMan
 
         Class<? extends JavaPlugin> javaPluginClass = this.loaderToMain.apply(loader);
         plugin = javaPluginClass.getConstructor().newInstance();
-        SoakPluginClassLoader.setupPlugin(plugin, this.container.metadata().id(), getPluginFile(), new File(getPluginFolder(), "config.yml"), getPluginFolder(), this::getPluginMeta, () -> (ClassLoader) loader);
+        SoakPluginClassLoader.setupPlugin(plugin, this.container.metadata().id(), getPluginFile(), new File(getPluginFolder(), "config.yml"), getPluginFolder(), this::getPluginMeta, () -> new SoakPluginMetaBuilder().from(this.getPluginMeta()).build(), () -> (ClassLoader) loader);
         this.commands.addAll(PluginCommandYamlParser.parse(plugin));
     }
 

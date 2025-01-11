@@ -25,7 +25,6 @@ public class BukkitRawCommand implements Command.Raw {
     private final org.bukkit.command.Command command;
     private final SoakPluginContainer owningPlugin;
 
-
     public BukkitRawCommand(SoakPluginContainer owningPlugin, org.bukkit.command.Command command) {
         this.command = command;
         this.owningPlugin = owningPlugin;

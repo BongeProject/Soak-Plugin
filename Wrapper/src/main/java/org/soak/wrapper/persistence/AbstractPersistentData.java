@@ -14,9 +14,8 @@ import org.spongepowered.api.data.DataHolder;
 
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-public abstract class AbstractPersistentData<DH extends DataHolder> implements PersistentDataContainer {
+public abstract class AbstractPersistentData<DH extends DataHolder> implements PersistentDataContainer, SoakPersistentData {
 
     protected DH holder;
 
@@ -26,6 +25,11 @@ public abstract class AbstractPersistentData<DH extends DataHolder> implements P
 
     public DH getHolder() {
         return this.holder;
+    }
+
+    @Override
+    public BukkitPersistentData wrapper() {
+        return this.holder.get(SoakKeys.BUKKIT_DATA).orElseGet(BukkitPersistentData::new);
     }
 
     @Override
@@ -45,7 +49,7 @@ public abstract class AbstractPersistentData<DH extends DataHolder> implements P
 
     @Override
     public @NotNull PersistentDataAdapterContext getAdapterContext() {
-        throw NotImplementedException.createByLazy(PersistentDataContainer.class, "getAdapterContext");
+        return new SoakPersistentDataContext();
     }
 
     @Override

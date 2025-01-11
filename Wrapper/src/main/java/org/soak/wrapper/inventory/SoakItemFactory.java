@@ -39,7 +39,8 @@ public class SoakItemFactory implements ItemFactory {
 
     @Override
     public @NotNull ItemStack ensureServerConversions(@NotNull ItemStack item) {
-        throw NotImplementedException.createByLazy(ItemFactory.class, "ensureServerConversions", ItemStack.class);
+        //ENSURES THAT THE ITEM PASSED USES MODERN FORMAT ... THIS IS HANDLED BY SPONGE
+        return item;
     }
 
     @Override

@@ -38,6 +38,7 @@ import org.bukkit.potion.PotionType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.soak.exception.NotImplementedException;
+import org.soak.generate.bukkit.MaterialList;
 import org.soak.map.item.SoakItemStackMap;
 import org.soak.plugin.SoakManager;
 import org.soak.wrapper.inventory.SoakItemStack;
@@ -124,7 +125,8 @@ public class SoakUnsafeValues implements UnsafeValues {
 
     @Override
     public Material getMaterial(String arg0, int arg1) {
-        throw NotImplementedException.createByLazy(UnsafeValues.class, "getMaterial", String.class, int.class);
+        //DONT KNOW WHAT THE NUMBER IS, BUT STRING LOOKS LIKE MATERIAL NAME
+        return (Material) MaterialList.getMaterial(arg0);
     }
 
     @Override

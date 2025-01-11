@@ -5,15 +5,27 @@ import org.spongepowered.api.ResourceKey;
 import org.spongepowered.api.data.persistence.DataContainer;
 import org.spongepowered.api.data.persistence.DataQuery;
 import org.spongepowered.api.data.persistence.DataSerializable;
+import org.spongepowered.api.data.persistence.DataView;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.LinkedTransferQueue;
+import java.util.stream.Collectors;
 
 public class BukkitPersistentData implements DataSerializable {
 
     public static int CONTENT_VERSION = 1;
     Collection<BukkitData<?>> data = new LinkedTransferQueue<>();
+
+    public Map<String, DataView> toMap() {
+        return data.stream().collect(Collectors.toMap(data -> data.getKey().formatted(), data -> {
+            var dataContainer = DataContainer.createNew();
+            dataContainer.set(DataQuery.of("type"), data.getType().typeName());
+            dataContainer.set(DataQuery.of("value"), data.getValue());
+            return dataContainer;
+        }));
+    }
 
     public <T> Optional<T> getValue(ResourceKey key) {
         return getData(key).map(data -> (T) data.getValue());

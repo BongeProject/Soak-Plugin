@@ -80,12 +80,15 @@ public class SoakPluginProviderContext implements PluginProviderContext {
                         .PermissionPluginYamlValue()
                         .value(node))
                 .toList();
+        var libraries = PluginYamlValues.LIBRARIES.value(yaml);
+
 
         this.descriptionFile = new SoakPluginMetaBuilder()
                 .setName(pluginName)
                 .setVersion(pluginVersion)
                 .setMain(pluginEntrypoint)
                 .setPermissions(permissions)
+                .setLibraries(libraries)
                 .build();
 
     }

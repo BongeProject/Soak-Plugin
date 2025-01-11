@@ -123,14 +123,15 @@ jar {
     }
 
     var insertJarFiles = new String[]{"../NMSBounce/build/libs/NMSBounce.jar"}
-    for(var file : insertJarFiles){
+    for (var file : insertJarFiles) {
         fat.add(files(file))
     }
 
-    var excludeList = new String[]{"Material.class", "EntityType.class"}
+    var excludeList = new String[]{"Material.class", "EntityType.class", "org/bukkit/attribute/Attribute.class"}
 
     from(fat).exclude {
-        return excludeList.contains(it.name);
+        var name = it.toString();
+            return excludeList.contains(name)
     }
 }
 

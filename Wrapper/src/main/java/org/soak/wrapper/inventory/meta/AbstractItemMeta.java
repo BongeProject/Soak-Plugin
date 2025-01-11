@@ -23,29 +23,38 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.mose.collection.stream.builder.CollectionStreamBuilder;
 import org.soak.exception.NotImplementedException;
+import org.soak.map.SoakAttributeMap;
 import org.soak.map.SoakBlockMap;
 import org.soak.map.SoakMessageMap;
 import org.soak.map.item.SoakEnchantmentTypeMap;
 import org.soak.map.item.SoakItemFlagMap;
 import org.soak.map.item.SoakItemStackMap;
+import org.soak.map.item.inventory.SoakEquipmentMap;
+import org.soak.wrapper.inventory.meta.food.SoakFoodComponent;
 import org.soak.wrapper.inventory.meta.tool.SoakToolComponent;
 import org.soak.wrapper.persistence.SoakImmutablePersistentDataContainer;
 import org.soak.wrapper.persistence.SoakMutablePersistentDataContainer;
 import org.spongepowered.api.data.DataHolder;
 import org.spongepowered.api.data.Key;
 import org.spongepowered.api.data.Keys;
+import org.spongepowered.api.data.persistence.DataView;
 import org.spongepowered.api.data.value.ListValue;
 import org.spongepowered.api.data.value.SetValue;
 import org.spongepowered.api.data.value.Value;
+import org.spongepowered.api.entity.attribute.type.AttributeType;
 import org.spongepowered.api.item.enchantment.EnchantmentType;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.item.inventory.ItemStackLike;
 import org.spongepowered.api.item.inventory.ItemStackSnapshot;
+import org.spongepowered.api.item.inventory.equipment.EquipmentType;
 import org.spongepowered.api.registry.RegistryTypes;
+import org.spongepowered.api.util.Ticks;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public abstract class AbstractItemMeta implements ItemMeta, Damageable {
 
@@ -107,6 +116,17 @@ public abstract class AbstractItemMeta implements ItemMeta, Damageable {
 
     public ItemStackSnapshot asSnapshot() {
         return this.container.asImmutable();
+    }
+
+    public boolean addAttribute(AttributeType type, org.spongepowered.api.entity.attribute.AttributeModifier modifier, Stream<EquipmentType> equipmentTypes) {
+        var newStack = this.container.asMutableCopy();
+        AtomicBoolean hasApplied = new AtomicBoolean();
+        equipmentTypes.forEach(equipmentType -> {
+            hasApplied.set(true);
+            newStack.addAttributeModifier(type, modifier, equipmentType);
+        });
+        this.container = newStack;
+        return hasApplied.get();
     }
 
     public <T> void set(@NotNull Key<Value<T>> key, @Nullable T value) throws RuntimeException {
@@ -350,12 +370,13 @@ public abstract class AbstractItemMeta implements ItemMeta, Damageable {
     private boolean modifyEnchantments(Function<List<org.spongepowered.api.item.enchantment.Enchantment>, List<org.spongepowered.api.item.enchantment.Enchantment>> apply) {
         try {
             List<org.spongepowered.api.item.enchantment.Enchantment> appliedEnchantments = this.container.get(Keys.APPLIED_ENCHANTMENTS)
+                    .map(LinkedList::new)
                     .orElse(new LinkedList<>());
             List<org.spongepowered.api.item.enchantment.Enchantment> appliedChanges = apply.apply(appliedEnchantments);
             this.setList(Keys.APPLIED_ENCHANTMENTS, appliedChanges);
 
             if (this.container.supports(Keys.STORED_ENCHANTMENTS)) {
-                var storedEnchantments = this.container.get(Keys.STORED_ENCHANTMENTS).orElse(new LinkedList<>());
+                var storedEnchantments = this.container.get(Keys.STORED_ENCHANTMENTS).map(LinkedList::new).orElse(new LinkedList<>());
                 var storedChanges = apply.apply(storedEnchantments);
                 this.setList(Keys.STORED_ENCHANTMENTS, storedChanges);
             }
@@ -454,10 +475,9 @@ public abstract class AbstractItemMeta implements ItemMeta, Damageable {
 
     @Override
     public boolean addAttributeModifier(@NotNull Attribute attribute, @NotNull AttributeModifier modifier) {
-        throw NotImplementedException.createByLazy(ItemMeta.class,
-                "addAttributeModifiers",
-                Attribute.class,
-                AttributeModifier.class);
+        var type = SoakAttributeMap.toSponge(attribute);
+        var spongeModifier = SoakAttributeMap.toSponge(modifier);
+        return this.addAttribute(type, spongeModifier, SoakEquipmentMap.toSponge(modifier.getSlotGroup()));
     }
 
     @Override
@@ -629,7 +649,7 @@ public abstract class AbstractItemMeta implements ItemMeta, Damageable {
 
     @Override
     public @NotNull Component itemName() {
-        return this.container.get(Keys.ITEM_NAME).orElseThrow();
+        return this.container.get(Keys.ITEM_NAME).orElseGet(() -> this.container.type().asComponent());
     }
 
     @Override
@@ -668,17 +688,17 @@ public abstract class AbstractItemMeta implements ItemMeta, Damageable {
 
     @Override
     public boolean hasEnchantmentGlintOverride() {
-        throw NotImplementedException.createByLazy(ItemMeta.class, "hasEnchantmentGlintOverride");
+        return this.sponge().get(Keys.ENCHANTMENT_GLINT_OVERRIDE).isPresent();
     }
 
     @Override
     public @NotNull Boolean getEnchantmentGlintOverride() {
-        throw NotImplementedException.createByLazy(ItemMeta.class, "getEnchantmentGlintOverride");
+        return this.sponge().get(Keys.ENCHANTMENT_GLINT_OVERRIDE).orElse(false);
     }
 
     @Override
     public void setEnchantmentGlintOverride(@Nullable Boolean aBoolean) {
-        throw NotImplementedException.createByLazy(ItemMeta.class, "setEnchantmentGlintOverride", Boolean.class);
+        this.set(Keys.ENCHANTMENT_GLINT_OVERRIDE, aBoolean);
     }
 
     @Override
@@ -723,22 +743,32 @@ public abstract class AbstractItemMeta implements ItemMeta, Damageable {
 
     @Override
     public boolean hasFood() {
-        throw NotImplementedException.createByLazy(ItemMeta.class, "hasFood");
+        return sponge().get(Keys.SATURATION).isPresent();
     }
 
     @Override
     public @NotNull FoodComponent getFood() {
-        throw NotImplementedException.createByLazy(ItemMeta.class, "getFood");
+        return new SoakFoodComponent(this);
     }
 
     @Override
     public void setFood(@Nullable FoodComponent foodComponent) {
-        throw NotImplementedException.createByLazy(ItemMeta.class, "setFood", FoodComponent.class);
+        if (foodComponent == null) {
+            remove(Keys.SATURATION);
+            remove(Keys.FOOD_CONVERTS_TO);
+            remove(Keys.EATING_TIME);
+            remove(Keys.CAN_ALWAYS_EAT);
+            return;
+        }
+        set(Keys.CAN_ALWAYS_EAT, foodComponent.canAlwaysEat());
+        set(Keys.FOOD_CONVERTS_TO, foodComponent.getUsingConvertsTo() == null ? null : SoakItemStackMap.toSponge(foodComponent.getUsingConvertsTo()));
+        set(Keys.EATING_TIME, Ticks.of((long) foodComponent.getEatSeconds() * 20));
+        set(Keys.SATURATION, (double) foodComponent.getSaturation());
     }
 
     @Override
     public boolean hasTool() {
-        throw NotImplementedException.createByLazy(ItemMeta.class, "hasTool");
+        return this.container.get(Keys.TOOL_DAMAGE_PER_BLOCK).isPresent();
     }
 
     @Override
@@ -748,7 +778,16 @@ public abstract class AbstractItemMeta implements ItemMeta, Damageable {
 
     @Override
     public void setTool(@Nullable ToolComponent toolComponent) {
-        throw NotImplementedException.createByLazy(ItemMeta.class, "setTool", ToolComponent.class);
+        var tool = getTool();
+        if (toolComponent == null) {
+            this.remove(Keys.EFFICIENCY);
+            this.remove(Keys.TOOL_RULES);
+            this.remove(Keys.TOOL_DAMAGE_PER_BLOCK);
+            return;
+        }
+        tool.setRules(toolComponent.getRules());
+        tool.setDamagePerBlock(toolComponent.getDamagePerBlock());
+        tool.setDefaultMiningSpeed(toolComponent.getDefaultMiningSpeed());
     }
 
     @Override
@@ -790,6 +829,31 @@ public abstract class AbstractItemMeta implements ItemMeta, Damageable {
 
         compareStack.setQuantity(1);
         stack.setQuantity(1);
-        return compareStack.equalTo(stack);
+        if(compareStack.equalTo(stack)){
+            return true;
+        }
+        //attempt to find difference -> used for debugging
+
+        var originalContainer = stack.asImmutable().toContainer();
+        var compareContainer = compareStack.asImmutable().toContainer();
+
+        var keys =  compareContainer.keys(true);
+        for(var key : keys){
+            if(!originalContainer.contains(key)){
+                return false;
+            }
+            var originalValue = originalContainer.get(key).orElseThrow();
+            if(originalValue instanceof DataView){
+                //deep compare, another key will get inside this view
+                continue;
+            }
+            var compareValue = compareContainer.get(key).orElseThrow();
+            if(!originalValue.equals(compareValue)){
+                return false;
+            }
+        }
+
+
+        return true;
     }
 }

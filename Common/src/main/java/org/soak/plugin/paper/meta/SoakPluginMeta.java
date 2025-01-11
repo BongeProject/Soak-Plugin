@@ -25,6 +25,7 @@ public class SoakPluginMeta implements PluginMeta {
     private final @Nullable String website;
     private final @NotNull Map<String, DependType> pluginDepends = new ConcurrentHashMap<>();
     private final @NotNull List<Permission> permissions = new ArrayList<>();
+    private final @NotNull List<String> libraries = new ArrayList<>();
 
     public SoakPluginMeta(@NotNull SoakPluginMetaBuilder builder) {
         this.name = Objects.requireNonNull(builder.getName(), "'setName' must be used");
@@ -37,6 +38,11 @@ public class SoakPluginMeta implements PluginMeta {
         this.website = builder.getWebsite();
         pluginDepends.putAll(builder.getPluginDepends());
         permissions.addAll(builder.getPermissions());
+        this.libraries.addAll(builder.getLibraries());
+    }
+
+    public List<String> getLibraries(){
+        return Collections.unmodifiableList(this.libraries);
     }
 
     @Override

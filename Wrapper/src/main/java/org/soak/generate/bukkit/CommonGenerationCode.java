@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 
 public class CommonGenerationCode {
 
@@ -19,7 +20,7 @@ public class CommonGenerationCode {
     }
 
     static String toEnumName(String name) {
-        return name.toUpperCase().replace(" ", "_");
+        return name.toUpperCase().replaceAll(" ", "_").replaceAll(Pattern.quote("."), "_");
     }
 
 

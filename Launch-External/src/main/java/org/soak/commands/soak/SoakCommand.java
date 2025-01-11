@@ -8,6 +8,7 @@ import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.soak.commands.SoakArguments;
+import org.soak.generate.bukkit.AttributeTypeList;
 import org.soak.generate.bukkit.EntityTypeList;
 import org.soak.generate.bukkit.MaterialList;
 import org.soak.plugin.SoakManager;
@@ -63,7 +64,7 @@ public class SoakCommand {
                             .map(SoakPluginContainer::getBukkitInstance)
                             .sorted(Comparator.comparing(plugin -> ((JavaPlugin) plugin).isEnabled())
                                     .thenComparing(plugin -> ((JavaPlugin) plugin).getName()))
-                            .map(plugin -> Component.text(plugin.getName())
+                            .map(plugin -> Component.text(plugin.getName() + " - Loaded " + (SoakPlugin.plugin().config().getLoadingEarlyPlugins().contains(plugin.getName()) ? "Early" : "Late"))
                                     .color(plugin.isEnabled() ? NamedTextColor.GREEN : NamedTextColor.RED))
                             .collect(Collectors.toList());
 
@@ -122,6 +123,18 @@ public class SoakCommand {
                 .build();
     }
 
+    public static Command.Parameterized createAttributeTypeList() {
+        return Command.builder()
+                .executor(context -> {
+                    AttributeTypeList.values().stream().sorted(Comparator.comparing(Enum::name)).forEach(att -> {
+                        String attributeType = AttributeTypeList.getAttributeType(att).key(RegistryTypes.ATTRIBUTE_TYPE).formatted();
+                        var component = Component.text(att.name() + "(AttributeType: " + attributeType + ")");
+                        context.sendMessage(component);
+                    });
+                    return CommandResult.success();
+                }).build();
+    }
+
     public static Command.Parameterized createMaterialItemFind() {
         var itemParameter = SoakArguments.registry(ItemType.class, "item", ItemTypes::registry, () -> RegistryTypes.ITEM_TYPE);
         return Command.builder().addParameter(itemParameter).executor(context -> {
@@ -146,6 +159,7 @@ public class SoakCommand {
                 .addChild(createInfoCommand(), "info")
                 .addChild(createMaterialList(), "material")
                 .addChild(createEntityTypeList(), "entityType", "entity")
+                .addChild(createAttributeTypeList(), "attributeType", "attribute")
                 .build();
     }
 

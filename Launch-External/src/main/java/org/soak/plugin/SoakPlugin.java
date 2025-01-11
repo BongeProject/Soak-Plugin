@@ -17,6 +17,7 @@ import org.soak.config.SoakConfiguration;
 import org.soak.data.sponge.PortalCooldownCustomData;
 import org.soak.data.sponge.SoakKeys;
 import org.soak.fix.forge.ForgeFixCommons;
+import org.soak.generate.bukkit.AttributeTypeList;
 import org.soak.generate.bukkit.EntityTypeList;
 import org.soak.generate.bukkit.MaterialList;
 import org.soak.hook.event.HelpMapListener;
@@ -74,7 +75,7 @@ public class SoakPlugin implements SoakExternalManager, WrapperManager {
     private final SoakMemoryStore memoryStore = new SoakMemoryStore();
     private final SoakServerProperties serverProperties = new SoakServerProperties();
     private final ConsoleHandler consoleHandler = new ConsoleHandler();
-    private final int generatedClassesCount = 2;
+    private final int generatedClassesCount = 3;
     private final Collection<SoakPluginContainer> loadedPlugins = new TreeSet<>((plugin, compare) -> {
         var opDepends = plugin.metadata().dependencies().stream().filter(p -> p.id().equals(compare.metadata().id())).findAny();
         if (opDepends.isPresent()) {
@@ -138,7 +139,7 @@ public class SoakPlugin implements SoakExternalManager, WrapperManager {
     }
 
     @Listener
-    private void generateMaterial(RegisterRegistryValueEvent.EngineScoped<Server> event) {
+    private void generateClasses(RegisterRegistryValueEvent.EngineScoped<Server> event) {
         String creatingClass = "Material";
         try {
             var classLoader = SoakPlugin.class.getClassLoader();
@@ -151,6 +152,11 @@ public class SoakPlugin implements SoakExternalManager, WrapperManager {
             var entityTypeList = EntityTypeList.createEntityTypeList();
             EntityTypeList.LOADED_CLASS = entityTypeList.load(classLoader, ClassLoadingStrategy.Default.INJECTION).getLoaded();
             generatedClasses.add(EntityTypeList.LOADED_CLASS);
+
+            creatingClass = "Attribute";
+            var attributeList = AttributeTypeList.createEntityTypeList();
+            AttributeTypeList.LOADED_CLASS = attributeList.load(classLoader, ClassLoadingStrategy.Default.INJECTION).getLoaded();
+            generatedClasses.add(AttributeTypeList.LOADED_CLASS);
         } catch (MethodTooLargeException e) {
             throw new IllegalStateException("This is a problem with Bukkit's design: PaperMC seem to be making a fix with its hardfork: Too many entries in " + creatingClass, e);
         } catch (Exception e) {
@@ -386,6 +392,7 @@ public class SoakPlugin implements SoakExternalManager, WrapperManager {
             }
 
             SoakPluginContainer container = new AbstractSoakPluginContainer(file, plugin, hasDependency(plugin) ? Order.EARLY : Order.DEFAULT);
+            container.downloadLibraries();
             loadedPlugins.add(container);
             Sponge.eventManager().registerListeners(container, container.instance(), MethodHandles.lookup());
         }
@@ -394,7 +401,6 @@ public class SoakPlugin implements SoakExternalManager, WrapperManager {
         this.getPlugins().forEach(container -> ((AbstractSoakPluginContainer) container).instance().onPluginsConstructed());
         if (late) {
             this.getPlugins().forEach(container -> ((AbstractSoakPluginContainer) container).getBukkitInstance().onLoad());
-
         }
     }
 

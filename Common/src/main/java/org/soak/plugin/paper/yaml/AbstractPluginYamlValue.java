@@ -6,6 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import org.spongepowered.configurate.ConfigurateException;
 import org.spongepowered.configurate.ConfigurationNode;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
 public abstract class AbstractPluginYamlValue<V> implements PluginYamlValue<V> {
@@ -35,6 +36,18 @@ public abstract class AbstractPluginYamlValue<V> implements PluginYamlValue<V> {
             var children = node.childrenMap().entrySet().stream().collect(Collectors.toMap(entry -> entry.getKey().toString(), entry -> entry.getValue().getBoolean()));
             String name = path[path.length - 1].toString();
             return new Permission(name, description, level, children);
+        }
+    }
+
+    public static class StringListPluginYamlValue extends AbstractPluginYamlValue<List<String>> {
+
+        public StringListPluginYamlValue(@NotNull Object... name){
+            super(name);
+        }
+
+        @Override
+        public @NotNull List<String> value(@NotNull ConfigurationNode node) throws ConfigurateException {
+            return node.childrenList().stream().map(ConfigurationNode::getString).toList();
         }
     }
 

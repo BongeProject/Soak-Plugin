@@ -10,6 +10,7 @@ import org.soak.plugin.SoakPluginContainer;
 import org.spongepowered.api.Server;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.Command;
+import org.spongepowered.api.command.manager.CommandFailedRegistrationException;
 import org.spongepowered.api.event.EventListenerRegistration;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.Order;
@@ -28,6 +29,7 @@ public class SoakPluginWrapper {
     private final SoakPluginContainer pluginContainer;
     private final Collection<org.bukkit.command.Command> commands = new LinkedHashSet<>();
     private boolean hasRunShutdown;
+    private boolean loadedCommandsEarly;
 
     public SoakPluginWrapper(SoakPluginContainer pluginContainer, Order order) {
         this.pluginContainer = pluginContainer;
@@ -55,6 +57,8 @@ public class SoakPluginWrapper {
         Plugin plugin = this.pluginContainer.getBukkitInstance();
         try {
             plugin.onEnable();
+            SoakPlugin.plugin().logger().info(this.pluginContainer.metadata().id() + " loaded early");
+
         } catch (Throwable e) {
             SoakManager.getManager().displayError(e, plugin);
         }
@@ -70,10 +74,8 @@ public class SoakPluginWrapper {
 
     @Listener
     public void onCommandRegister(RegisterCommandEvent<Command.Raw> event) {
-        this.commands.forEach(cmd -> event.register(this.pluginContainer,
-                new BukkitRawCommand(this.pluginContainer, cmd),
-                cmd.getName(),
-                cmd.getAliases().toArray(String[]::new)));
+        loadedCommandsEarly = true;
+        this.commands.forEach(cmd -> event.register(this.pluginContainer, new BukkitRawCommand(this.pluginContainer, cmd), cmd.getName(), cmd.getAliases().toArray(String[]::new)));
     }
 
     @Listener
@@ -105,8 +107,25 @@ public class SoakPluginWrapper {
             return;
         }
         Plugin plugin = this.pluginContainer.getBukkitInstance();
+        if(!loadedCommandsEarly) {
+            //load commands
+            var registerCmd = Sponge.server().commandManager().registrar(Command.Raw.class).orElseThrow(() -> new IllegalStateException("Cannot load the command raw register for " + pluginContainer.metadata().id()));
+            this.commands.forEach(cmd -> {
+                try {
+                    registerCmd.register(this.pluginContainer, new BukkitRawCommand(this.pluginContainer, cmd), cmd.getName(), cmd.getAliases().toArray(String[]::new));
+                } catch (CommandFailedRegistrationException ex) {
+                    try {
+                        registerCmd.register(this.pluginContainer, new BukkitRawCommand(this.pluginContainer, cmd), cmd.getName());
+                    } catch (CommandFailedRegistrationException ex1) {
+                        pluginContainer.logger().warn("Cannot register command, skipping: ", ex1);
+                    }
+                }
+            });
+        }
+
         try {
             plugin.onEnable();
+            SoakPlugin.plugin().logger().info(this.pluginContainer.metadata().id() + " loaded late");
         } catch (Throwable e) {
             SoakManager.getManager().displayError(e, plugin);
         }

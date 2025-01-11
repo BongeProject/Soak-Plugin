@@ -2,6 +2,7 @@ package org.soak.map.item.inventory;
 
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.soak.map.SoakResourceKeyMap;
@@ -16,6 +17,7 @@ import org.spongepowered.api.registry.RegistryTypes;
 
 import java.util.Collection;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 public class SoakEquipmentMap {
 
@@ -30,36 +32,42 @@ public class SoakEquipmentMap {
                 .orElseGet(() -> new SoakTrimMaterial(material));
     }
 
-    public static TrimPattern toBukkit(org.spongepowered.api.item.recipe.smithing.TrimPattern trim){
+    public static TrimPattern toBukkit(org.spongepowered.api.item.recipe.smithing.TrimPattern trim) {
         NamespacedKey key = SoakResourceKeyMap.mapToBukkit(trim.key(RegistryTypes.TRIM_PATTERN));
         Collection<TrimPattern> collection = FakeRegistryHelper.getFields(TrimPattern.class, TrimPattern.class);
 
         return collection.stream().filter(pattern -> pattern.getKey().equals(key)).findAny().orElseGet(() -> new SoakTrimPattern(trim));
     }
 
-    public static org.spongepowered.api.item.recipe.smithing.TrimPattern toSponge(TrimPattern pattern){
-        if(!(pattern instanceof SoakTrimPattern soak)){
+    public static org.spongepowered.api.item.recipe.smithing.TrimPattern toSponge(TrimPattern pattern) {
+        if (!(pattern instanceof SoakTrimPattern soak)) {
             throw new IllegalArgumentException("Trim Pattern must be a SoakTrimPattern");
         }
         return soak.sponge();
     }
 
     public static DefaultedRegistryReference<EquipmentType> toSponge(EquipmentSlot slot) {
-        switch (slot) {
-            case HAND:
-                return EquipmentTypes.MAINHAND;
-            case OFF_HAND:
-                return EquipmentTypes.OFFHAND;
-            case FEET:
-                return EquipmentTypes.FEET;
-            case LEGS:
-                return EquipmentTypes.LEGS;
-            case CHEST:
-                return EquipmentTypes.CHEST;
-            case HEAD:
-                return EquipmentTypes.HEAD;
-            default:
-                throw new RuntimeException("No mapping for " + slot.name());
+        return switch (slot) {
+            case HAND -> EquipmentTypes.MAINHAND;
+            case OFF_HAND -> EquipmentTypes.OFFHAND;
+            case FEET -> EquipmentTypes.FEET;
+            case LEGS -> EquipmentTypes.LEGS;
+            case CHEST -> EquipmentTypes.CHEST;
+            case HEAD -> EquipmentTypes.HEAD;
+            default -> throw new RuntimeException("No mapping for " + slot.name());
+        };
+    }
+
+    public static Stream<EquipmentType> toSponge(EquipmentSlotGroup group) {
+        if (group == EquipmentSlotGroup.ANY) {
+            return EquipmentTypes.registry().stream();
         }
+        if (group == EquipmentSlotGroup.HAND) {
+            return Stream.of(EquipmentTypes.MAINHAND, EquipmentTypes.OFFHAND).map(DefaultedRegistryReference::get);
+        }
+        if(group == EquipmentSlotGroup.OFFHAND){
+            return Stream.of(EquipmentTypes.OFFHAND.get());
+        }
+        throw new IllegalArgumentException("Cannot convert EquipmentSlotGroup of " + group.toString());
     }
 }

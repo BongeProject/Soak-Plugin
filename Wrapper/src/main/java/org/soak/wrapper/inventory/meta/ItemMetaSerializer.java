@@ -31,10 +31,15 @@ public class ItemMetaSerializer {
                 .stream()
                 .map(c -> LegacyComponentSerializer.legacySection().serialize(c))
                 .toList());
-        var component = meta.displayName();
-        if (component != null) {
-            values.put("display-name", GsonComponentSerializer.gson().serialize(component));
+        var displayName = meta.displayName();
+        if (displayName != null) {
+            values.put("display-name", GsonComponentSerializer.gson().serialize(displayName));
         }
+        if (meta.hasItemName()) {
+            var itemName = meta.itemName();
+            values.put("item-name", GsonComponentSerializer.gson().serialize(itemName));
+        }
+
         if (meta instanceof AbstractItemMeta itemMeta) {
             values.put("id", itemMeta.container.type().key(RegistryTypes.ITEM_TYPE).formatted());
             values.put("count", itemMeta.quantity());
@@ -49,6 +54,24 @@ public class ItemMetaSerializer {
 
             values.forEach((key, value) -> {
                 switch (key) {
+                    case "meta-type" -> {
+                        //IGNORE THIS
+                    }
+                    case "item-name" -> {
+                        String jsonStringComponent = (String) value;
+                        Component component;
+                        if (jsonStringComponent.startsWith("{")) {
+                            try {
+                                component = GsonComponentSerializer.gson().deserialize(jsonStringComponent);
+                            } catch (Throwable e) {
+                                SoakManager.getManager().getLogger().error("Could not read json of " + jsonStringComponent, e);
+                                return;
+                            }
+                        } else {
+                            component = LegacyComponentSerializer.legacySection().deserialize(jsonStringComponent);
+                        }
+                        itemStackBuilder.add(Keys.ITEM_NAME, component);
+                    }
                     case "id" -> {
                         ItemType type = ItemTypes.registry().findValue(ResourceKey.resolve((String) value)).orElseThrow(() -> new IllegalArgumentException("Unknown ItemType of " + value));
                         itemStackBuilder.itemType(type);
@@ -87,7 +110,6 @@ public class ItemMetaSerializer {
                             component = LegacyComponentSerializer.legacySection().deserialize(jsonStringComponent);
                         }
                         itemStackBuilder.add(Keys.DISPLAY_NAME, component);
-
                     }
                     default ->
                             SoakManager.getManager().getLogger().error("Unknown Item Deserialize key of -> " + key + ": (" + value.getClass().getSimpleName() + ") " + value);

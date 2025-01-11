@@ -27,12 +27,12 @@ public class SoakToolComponent implements ToolComponent {
 
     @Override
     public float getDefaultMiningSpeed() {
-        throw NotImplementedException.createByLazy(ToolComponent.class, "getDefaultMiningSpeed");
+        return item.sponge().get(Keys.EFFICIENCY).orElse(0.0).floatValue();
     }
 
     @Override
     public void setDefaultMiningSpeed(float v) {
-        throw NotImplementedException.createByLazy(ToolComponent.class, "setDefaultMiningSpeed", float.class);
+        item.set(Keys.EFFICIENCY, ((Float) v).doubleValue());
     }
 
     @Override

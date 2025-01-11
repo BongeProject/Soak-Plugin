@@ -78,6 +78,7 @@ import org.spongepowered.api.entity.living.player.User;
 import org.spongepowered.api.item.ItemType;
 import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.item.inventory.type.ViewableInventory;
+import org.spongepowered.api.profile.GameProfile;
 import org.spongepowered.api.registry.RegistryTypes;
 import org.spongepowered.api.service.ban.Ban;
 import org.spongepowered.api.service.ban.BanTypes;
@@ -128,30 +129,21 @@ public abstract class SoakServer implements Server {
         pm.paperPluginManager = pluginManager.get();
         return pm;
     });
-    private final Singleton<Map<Class<?>, Registry<?>>> registries = new Singleton<>(() -> Arrays
-            .stream(Registry.class.getDeclaredFields())
-            .filter(field -> Modifier.isFinal(field.getModifiers()))
-            .filter(field -> Modifier.isPublic(field.getModifiers()))
-            .filter(field -> Modifier.isStatic(field.getModifiers()))
-            .filter(field -> Registry.class.isAssignableFrom(field.getType()))
-            .map(field -> {
-                try {
-                    var reg = (Registry<?>) field.get(null);
-                    return reg;
-                } catch (IllegalAccessException e) {
-                    throw new RuntimeException(e);
-                }
-            })
-            .filter(Objects::nonNull)
-            .filter(reg -> !(reg instanceof SoakRegistry<?, ?>))
-            .collect(Collectors.toMap(reg -> {
-                if (reg instanceof Registry.SimpleRegistry simpleReg) {
-                    var first = simpleReg.iterator().next();
-                    return first.getClass();
-                }
-                var generic = (ParameterizedType) reg.getClass().getGenericInterfaces()[0];
-                return (Class<?>) generic.getActualTypeArguments()[0];
-            }, reg -> reg)));
+    private final Singleton<Map<Class<?>, Registry<?>>> registries = new Singleton<>(() -> Arrays.stream(Registry.class.getDeclaredFields()).filter(field -> Modifier.isFinal(field.getModifiers())).filter(field -> Modifier.isPublic(field.getModifiers())).filter(field -> Modifier.isStatic(field.getModifiers())).filter(field -> Registry.class.isAssignableFrom(field.getType())).map(field -> {
+        try {
+            var reg = (Registry<?>) field.get(null);
+            return reg;
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }).filter(Objects::nonNull).filter(reg -> !(reg instanceof SoakRegistry<?, ?>)).collect(Collectors.toMap(reg -> {
+        if (reg instanceof Registry.SimpleRegistry simpleReg) {
+            var first = simpleReg.iterator().next();
+            return first.getClass();
+        }
+        var generic = (ParameterizedType) reg.getClass().getGenericInterfaces()[0];
+        return (Class<?>) generic.getActualTypeArguments()[0];
+    }, reg -> reg)));
 
     private final java.util.logging.Logger logger;
 
@@ -316,34 +308,13 @@ public abstract class SoakServer implements Server {
 
     @Override
     public @Nullable World getWorld(@NotNull String s) {
-        return Sponge
-                .server()
-                .worldManager()
-                .worlds()
-                .stream()
-                .filter(world -> world
-                        .key()
-                        .value()
-                        .equalsIgnoreCase(s))
-                .findAny()
-                .map(world -> SoakManager
-                        .<WrapperManager>getManager()
-                        .getMemoryStore()
-                        .get(world))
-                .orElse(null);
+        return Sponge.server().worldManager().worlds().stream().filter(world -> world.key().value().equalsIgnoreCase(s)).findAny().map(world -> SoakManager.<WrapperManager>getManager().getMemoryStore().get(world)).orElse(null);
     }
 
     @Override
     public @Nullable World getWorld(@NotNull UUID uuid) {
         var worldManager = Sponge.server().worldManager();
-        return worldManager
-                .worldKey(uuid)
-                .flatMap(worldManager::world)
-                .map(world -> SoakManager
-                        .<WrapperManager>getManager()
-                        .getMemoryStore()
-                        .get(world))
-                .orElse(null);
+        return worldManager.worldKey(uuid).flatMap(worldManager::world).map(world -> SoakManager.<WrapperManager>getManager().getMemoryStore().get(world)).orElse(null);
     }
 
     @Override
@@ -371,28 +342,19 @@ public abstract class SoakServer implements Server {
         ResourceKey key = SoakResourceKeyMap.mapToSponge(tag);
         boolean classMatch = clazz.getName().equals(Material.class.getName());
         if (classMatch && registry.equals(Tag.REGISTRY_BLOCKS)) {
-            var opTag = FakeRegistryHelper.<org.spongepowered.api.tag.Tag<BlockType>>getFields(BlockTypeTags.class, org.spongepowered.api.tag.Tag.class)
-                    .stream()
-                    .filter(spongeTag -> spongeTag.key().equals(key))
-                    .findAny();
+            var opTag = FakeRegistryHelper.<org.spongepowered.api.tag.Tag<BlockType>>getFields(BlockTypeTags.class, org.spongepowered.api.tag.Tag.class).stream().filter(spongeTag -> spongeTag.key().equals(key)).findAny();
             if (opTag.isPresent()) {
                 return (Tag<T>) (Object) new MaterialSetTag(tag, TagHelper.getBlockTypes(opTag.get()).map(block -> SoakBlockMap.toBukkit(block)).collect(Collectors.toList()));
             }
         }
         if (classMatch && registry.equals(Tag.REGISTRY_ITEMS)) {
-            var opTag = FakeRegistryHelper.<org.spongepowered.api.tag.Tag<ItemType>>getFields(ItemTypeTags.class, org.spongepowered.api.tag.Tag.class)
-                    .stream()
-                    .filter(spongeTag -> spongeTag.key().equals(key))
-                    .findAny();
+            var opTag = FakeRegistryHelper.<org.spongepowered.api.tag.Tag<ItemType>>getFields(ItemTypeTags.class, org.spongepowered.api.tag.Tag.class).stream().filter(spongeTag -> spongeTag.key().equals(key)).findAny();
             if (opTag.isPresent()) {
                 return (Tag<T>) (Object) new MaterialSetTag(tag, TagHelper.getItemTypes(opTag.get()).map(item -> SoakItemStackMap.toBukkit(item)).collect(Collectors.toList()));
             }
         }
         if (clazz.getName().equals(EntityType.class.getName()) && registry.equals(Tag.REGISTRY_ENTITY_TYPES)) {
-            var opTag = FakeRegistryHelper.<org.spongepowered.api.tag.Tag<org.spongepowered.api.entity.EntityType<?>>>getFields(EntityTypeTags.class, org.spongepowered.api.tag.Tag.class)
-                    .stream()
-                    .filter(spongeTag -> spongeTag.key().equals(key))
-                    .findAny();
+            var opTag = FakeRegistryHelper.<org.spongepowered.api.tag.Tag<org.spongepowered.api.entity.EntityType<?>>>getFields(EntityTypeTags.class, org.spongepowered.api.tag.Tag.class).stream().filter(spongeTag -> spongeTag.key().equals(key)).findAny();
             if (opTag.isPresent()) {
                 return (Tag<T>) (Object) new EntitySetTag(tag, TagHelper.getEntityTypes(opTag.get()).map(entity -> SoakEntityMap.toBukkit(entity)).collect(Collectors.toList()));
             }
@@ -401,16 +363,10 @@ public abstract class SoakServer implements Server {
 
         //overrides
         if (registry.equals(Tag.REGISTRY_ITEMS) && tag.asString().equals("minecraft:coral_blocks")) {
-            return (Tag<T>) (Object) new MaterialSetTag(tag,
-                    ItemTypes.registry()
-                            .stream()
-                            .filter(item -> item.key(RegistryTypes.ITEM_TYPE).value().contains("coral_blocks"))
-                            .map(item -> SoakItemStackMap.toBukkit(item))
-                            .collect(Collectors.toList()));
+            return (Tag<T>) (Object) new MaterialSetTag(tag, ItemTypes.registry().stream().filter(item -> item.key(RegistryTypes.ITEM_TYPE).value().contains("coral_blocks")).map(item -> SoakItemStackMap.toBukkit(item)).collect(Collectors.toList()));
         }
 
-        if (registry.equals(Tag.REGISTRY_BLOCKS) && tag.asString()
-                .equals("minecraft:wool_carpets")) {
+        if (registry.equals(Tag.REGISTRY_BLOCKS) && tag.asString().equals("minecraft:wool_carpets")) {
             Set<Material> itemTypes = TagHelper.getBlockTypes(BlockTypeTags.WOOL_CARPETS).map(block -> SoakBlockMap.toBukkit(block)).collect(Collectors.toSet());
             return (Tag<T>) (Object) new MaterialSetTag(tag, itemTypes);
         }
@@ -430,23 +386,11 @@ public abstract class SoakServer implements Server {
         }
 
         if (registry.equals(Tag.REGISTRY_ITEMS) && tag.asString().equals("minecraft:crops")) {
-            var items = ItemTypes.registry()
-                    .stream()
-                    .filter(item -> org.spongepowered.api.item.inventory.ItemStack.of(item)
-                            .get(Keys.REPLENISHED_FOOD)
-                            .isPresent())
-                    .map(item -> SoakItemStackMap.toBukkit(item))
-                    .collect(Collectors.toSet());
+            var items = ItemTypes.registry().stream().filter(item -> org.spongepowered.api.item.inventory.ItemStack.of(item).get(Keys.REPLENISHED_FOOD).isPresent()).map(item -> SoakItemStackMap.toBukkit(item)).collect(Collectors.toSet());
             return (Tag<T>) (Object) new MaterialSetTag(tag, items);
         }
         if (registry.equals(Tag.REGISTRY_ITEMS) && tag.asString().equals("minecraft:furnace_materials")) {
-            var items = ItemTypes.registry()
-                    .stream()
-                    .filter(item -> org.spongepowered.api.item.inventory.ItemStack.of(item)
-                            .get(Keys.MAX_COOK_TIME)
-                            .isPresent())
-                    .map(item -> SoakItemStackMap.toBukkit(item))
-                    .collect(Collectors.toSet());
+            var items = ItemTypes.registry().stream().filter(item -> org.spongepowered.api.item.inventory.ItemStack.of(item).get(Keys.MAX_COOK_TIME).isPresent()).map(item -> SoakItemStackMap.toBukkit(item)).collect(Collectors.toSet());
             return (Tag<T>) (Object) new MaterialSetTag(tag, items);
         }
         SoakManager.getManager().getLogger().warn("No tag found of registry: '" + registry + "' Type: " + clazz.getSimpleName() + " id: " + tag.asString());
@@ -481,8 +425,7 @@ public abstract class SoakServer implements Server {
 
     @Override
     public @NotNull String getVersion() {
-        return "(MC: " + getMinecraftVersion() + ") - " + SoakManager.getManager().getVersion()
-                .toString();
+        return "(MC: " + getMinecraftVersion() + ") - " + SoakManager.getManager().getVersion().toString();
     }
 
     @Override
@@ -500,17 +443,8 @@ public abstract class SoakServer implements Server {
         if (!Sponge.isServerAvailable()) {
             return Collections.emptySet();
         }
-        var builder = CollectionStreamBuilder
-                .builder()
-                .collection(Sponge.server().onlinePlayers())
-                .basicMap(player -> (Player) SoakManager.<WrapperManager>getManager().getMemoryStore().get(player));
-        return ListMappingUtils
-                .fromStream(
-                        builder,
-                        () -> Sponge.server().onlinePlayers().stream(),
-                        (spongePlayer, soakPlayer) -> ((SoakPlayer) soakPlayer).spongeEntity().equals(spongePlayer),
-                        Comparator.comparing(spongePlayer -> spongePlayer.get(Keys.LAST_DATE_JOINED).orElseThrow(() -> new RuntimeException("No value found for last joined on a online player"))))
-                .buildList();
+        var builder = CollectionStreamBuilder.builder().collection(Sponge.server().onlinePlayers()).basicMap(player -> (Player) SoakManager.<WrapperManager>getManager().getMemoryStore().get(player));
+        return ListMappingUtils.fromStream(builder, () -> Sponge.server().onlinePlayers().stream(), (spongePlayer, soakPlayer) -> ((SoakPlayer) soakPlayer).spongeEntity().equals(spongePlayer), Comparator.comparing(spongePlayer -> spongePlayer.get(Keys.LAST_DATE_JOINED).orElseThrow(() -> new RuntimeException("No value found for last joined on a online player")))).buildList();
     }
 
     @Override
@@ -624,20 +558,13 @@ public abstract class SoakServer implements Server {
         var userManager = this.spongeServer().userManager();
         var futurePlayers = whitelistService.whitelistedProfiles().thenCompose(profiles -> {
             var futures = profiles.stream().map(userManager::load).toArray(CompletableFuture[]::new);
-            return CompletableFuture
-                    .allOf(futures)
-                    .thenApply(v -> Arrays
-                            .stream(futures)
-                            .map(future -> {
-                                try {
-                                    return (Optional<User>) future.get();
-                                } catch (InterruptedException | ExecutionException e) {
-                                    throw new RuntimeException(e);
-                                }
-                            })
-                            .filter(Optional::isPresent)
-                            .map(Optional::get)
-                            .map(user -> (OfflinePlayer) new SoakOfflinePlayer(user)).collect(Collectors.toSet()));
+            return CompletableFuture.allOf(futures).thenApply(v -> Arrays.stream(futures).map(future -> {
+                try {
+                    return (Optional<User>) future.get();
+                } catch (InterruptedException | ExecutionException e) {
+                    throw new RuntimeException(e);
+                }
+            }).filter(Optional::isPresent).map(Optional::get).map(user -> (OfflinePlayer) new SoakOfflinePlayer(user)).collect(Collectors.toSet()));
         });
         try {
             return futurePlayers.get();
@@ -759,12 +686,8 @@ public abstract class SoakServer implements Server {
 
     @Override
     public @NotNull List<World> getWorlds() {
-        var builder = CollectionStreamBuilder
-                .builder()
-                .collection(this.spongeServer().worldManager().worlds())
-                .basicMap(world -> (World) SoakManager.<WrapperManager>getManager().getMemoryStore().get(world));
-        return ListMappingUtils.fromStream(builder, () -> this.spongeServer().worldManager().worlds().stream(), (spongeWorld, soakWorld) -> ((SoakWorld) soakWorld).sponge().equals(spongeWorld), Comparator.comparing(world -> world.key().formatted()))
-                .buildList();
+        var builder = CollectionStreamBuilder.builder().collection(this.spongeServer().worldManager().worlds()).basicMap(world -> (World) SoakManager.<WrapperManager>getManager().getMemoryStore().get(world));
+        return ListMappingUtils.fromStream(builder, () -> this.spongeServer().worldManager().worlds().stream(), (spongeWorld, soakWorld) -> ((SoakWorld) soakWorld).sponge().equals(spongeWorld), Comparator.comparing(world -> world.key().formatted())).buildList();
     }
 
     @Override
@@ -812,27 +735,17 @@ public abstract class SoakServer implements Server {
 
     @Override
     public @NotNull ItemStack createExplorerMap(@NotNull World world, @NotNull Location location, @NotNull StructureType structureType) {
-        throw NotImplementedException.createByLazy(SoakServer.class,
-                "createExplorerMap",
-                World.class,
-                Location.class,
-                StructureType.class);
+        throw NotImplementedException.createByLazy(SoakServer.class, "createExplorerMap", World.class, Location.class, StructureType.class);
     }
 
     @Override
     public @NotNull ItemStack createExplorerMap(@NotNull World world, @NotNull Location location, @NotNull StructureType structureType, int radius, boolean findUnexplored) {
-        throw NotImplementedException.createByLazy(SoakServer.class,
-                "createExplorerMap",
-                World.class,
-                Location.class,
-                StructureType.class,
-                boolean.class);
+        throw NotImplementedException.createByLazy(SoakServer.class, "createExplorerMap", World.class, Location.class, StructureType.class, boolean.class);
     }
 
     @Override
     public void reload() {
-        SoakManager.getManager().getLogger()
-                .warn("A Bukkit plugin attempted to reload the plugin list. This is not possible in Sponge, reloading the data instead");
+        SoakManager.getManager().getLogger().warn("A Bukkit plugin attempted to reload the plugin list. This is not possible in Sponge, reloading the data instead");
         reloadData();
     }
 
@@ -843,19 +756,12 @@ public abstract class SoakServer implements Server {
 
     @Override
     public @Nullable PluginCommand getPluginCommand(@NotNull String name) {
-        PluginCommand pluginCommand = SoakManager.getManager().getBukkitSoakContainers()
-                .sorted(Comparator.comparing(pl -> pl.metadata().id()))
-                .flatMap(pl -> SoakManager.<WrapperManager>getManager().getBukkitCommands(pl.getBukkitInstance()).stream())
-                .filter(cmd -> {
-                    if (cmd.getName().equalsIgnoreCase(name)) {
-                        return true;
-                    }
-                    return cmd.getAliases().stream().anyMatch(alias -> alias.equalsIgnoreCase(name));
-                })
-                .filter(cmd -> cmd instanceof PluginCommand)
-                .findFirst()
-                .map(cmd -> (PluginCommand) cmd)
-                .orElse(null);
+        PluginCommand pluginCommand = SoakManager.getManager().getBukkitSoakContainers().sorted(Comparator.comparing(pl -> pl.metadata().id())).flatMap(pl -> SoakManager.<WrapperManager>getManager().getBukkitCommands(pl.getBukkitInstance()).stream()).filter(cmd -> {
+            if (cmd.getName().equalsIgnoreCase(name)) {
+                return true;
+            }
+            return cmd.getAliases().stream().anyMatch(alias -> alias.equalsIgnoreCase(name));
+        }).filter(cmd -> cmd instanceof PluginCommand).findFirst().map(cmd -> (PluginCommand) cmd).orElse(null);
         if (pluginCommand == null) {
             SoakManager.<WrapperManager>getManager().getLogger().warn("A Bukkit plugin attempted to access the command '" + name + "'. It however does not exist");
         }
@@ -870,10 +776,7 @@ public abstract class SoakServer implements Server {
 
     @Override
     public boolean dispatchCommand(@NotNull CommandSender sender, @NotNull String commandLine) throws CommandException {
-        throw NotImplementedException.createByLazy(SoakServer.class,
-                "dispatchCommand",
-                CommandSender.class,
-                String.class);
+        throw NotImplementedException.createByLazy(SoakServer.class, "dispatchCommand", CommandSender.class, String.class);
     }
 
     @Override
@@ -898,21 +801,14 @@ public abstract class SoakServer implements Server {
 
     @Override
     public @NotNull Iterator<Recipe> recipeIterator() {
-        return Sponge
-                .server()
-                .recipeManager()
-                .all()
-                .stream()
-                .<Recipe>map(recipe -> {
-                    try {
-                        return SoakRecipeMap.toBukkit(recipe);
-                    } catch (RuntimeException e) {
-                        e.printStackTrace();
-                        return null;
-                    }
-                })
-                .filter(Objects::nonNull)
-                .iterator();
+        return Sponge.server().recipeManager().all().stream().<Recipe>map(recipe -> {
+            try {
+                return SoakRecipeMap.toBukkit(recipe);
+            } catch (RuntimeException e) {
+                e.printStackTrace();
+                return null;
+            }
+        }).filter(Objects::nonNull).iterator();
     }
 
     @Override
@@ -936,10 +832,7 @@ public abstract class SoakServer implements Server {
     }
 
     public ServerWorld defaultWorld() {
-        return this.spongeServer()
-                .worldManager()
-                .world(DefaultWorldKeys.DEFAULT)
-                .orElseThrow(() -> new RuntimeException("default world is not loaded"));
+        return this.spongeServer().worldManager().world(DefaultWorldKeys.DEFAULT).orElseThrow(() -> new RuntimeException("default world is not loaded"));
     }
 
     @Override
@@ -988,10 +881,7 @@ public abstract class SoakServer implements Server {
         if (cached != null) {
             return cached;
         }
-        var future = Sponge.server()
-                .gameProfileManager()
-                .profile(name)
-                .thenCompose(profile -> Sponge.server().userManager().loadOrCreate(profile.uuid()));
+        var future = Sponge.server().gameProfileManager().profile(name).thenCompose(profile -> Sponge.server().userManager().loadOrCreate(profile.uuid()));
         return new SoakOfflinePlayer(future);
     }
 
@@ -1000,10 +890,7 @@ public abstract class SoakServer implements Server {
         if (Sponge.server().userManager().streamOfMatches(name).findAny().isEmpty()) {
             return null;
         }
-        var future = Sponge.server()
-                .userManager()
-                .load(name)
-                .thenApply(op -> op.orElseThrow(() -> new RuntimeException("Failed to load cached player")));
+        var future = Sponge.server().userManager().load(name).thenApply(op -> op.orElseThrow(() -> new RuntimeException("Failed to load cached player")));
         return new SoakOfflinePlayer(future);
     }
 
@@ -1015,17 +902,24 @@ public abstract class SoakServer implements Server {
 
     @Override
     public org.bukkit.profile.@NotNull PlayerProfile createPlayerProfile(@Nullable UUID uuid, @Nullable String s) {
-        throw NotImplementedException.createByLazy(Server.class, "createPlayerProfile", UUID.class, String.class);
+        var opProfile = Sponge.server().gameProfileManager().cache().findById(uuid);
+        if (opProfile.isPresent()) {
+            return new SoakPlayerProfile(opProfile.get(), true);
+        }
+
+        var profile = GameProfile.of(uuid, s);
+        return new SoakPlayerProfile(profile, false);
+
     }
 
     @Override
-    public org.bukkit.profile.@NotNull PlayerProfile createPlayerProfile(@NotNull UUID uuid) {
-        throw NotImplementedException.createByLazy(Server.class, "createPlayerProfile", UUID.class);
+    public @NotNull org.bukkit.profile.PlayerProfile createPlayerProfile(@NotNull UUID uuid) {
+        return createPlayerProfile(uuid, null);
     }
 
     @Override
-    public org.bukkit.profile.@NotNull PlayerProfile createPlayerProfile(@NotNull String s) {
-        throw NotImplementedException.createByLazy(Server.class, "createPlayerProfile", String.class);
+    public @NotNull org.bukkit.profile.PlayerProfile createPlayerProfile(@NotNull String s) {
+        return createPlayerProfile(null, s);
     }
 
     @Override
@@ -1066,25 +960,16 @@ public abstract class SoakServer implements Server {
     public @NotNull Set<OfflinePlayer> getBannedPlayers() {
         var banService = Sponge.server().serviceProvider().banService();
         var userManager = Sponge.server().userManager();
-        CompletableFuture<Set<OfflinePlayer>> profiles = banService
-                .profileBans()
-                .thenCompose(collection -> {
-                    CompletableFuture<Optional<User>>[] futures = collection.stream().map(profile -> userManager.load(profile.profile())).toArray(CompletableFuture[]::new);
-                    return CompletableFuture
-                            .allOf(futures)
-                            .thenApply(v -> Arrays
-                                    .stream(futures)
-                                    .map(f -> {
-                                        try {
-                                            return f.get();
-                                        } catch (InterruptedException | ExecutionException e) {
-                                            throw new RuntimeException(e);
-                                        }
-                                    })
-                                    .filter(Optional::isPresent)
-                                    .map(opUser -> new SoakOfflinePlayer(opUser.get()))
-                                    .collect(Collectors.toSet()));
-                });
+        CompletableFuture<Set<OfflinePlayer>> profiles = banService.profileBans().thenCompose(collection -> {
+            CompletableFuture<Optional<User>>[] futures = collection.stream().map(profile -> userManager.load(profile.profile())).toArray(CompletableFuture[]::new);
+            return CompletableFuture.allOf(futures).thenApply(v -> Arrays.stream(futures).map(f -> {
+                try {
+                    return f.get();
+                } catch (InterruptedException | ExecutionException e) {
+                    throw new RuntimeException(e);
+                }
+            }).filter(Optional::isPresent).map(opUser -> new SoakOfflinePlayer(opUser.get())).collect(Collectors.toSet()));
+        });
 
         try {
             return profiles.get();
@@ -1140,19 +1025,12 @@ public abstract class SoakServer implements Server {
 
     @Override
     public @NotNull Inventory createInventory(InventoryHolder arg0, @NotNull InventoryType arg1) {
-        throw NotImplementedException.createByLazy(Server.class,
-                "createInventory",
-                InventoryHolder.class,
-                InventoryType.class);
+        throw NotImplementedException.createByLazy(Server.class, "createInventory", InventoryHolder.class, InventoryType.class);
     }
 
     @Override
     public @NotNull Inventory createInventory(InventoryHolder arg0, @NotNull InventoryType arg1, @NotNull Component arg2) {
-        throw NotImplementedException.createByLazy(Server.class,
-                "createInventory",
-                InventoryHolder.class,
-                InventoryType.class,
-                Component.class);
+        throw NotImplementedException.createByLazy(Server.class, "createInventory", InventoryHolder.class, InventoryType.class, Component.class);
     }
 
     @Deprecated
@@ -1328,23 +1206,12 @@ public abstract class SoakServer implements Server {
 
     @Override
     public @NotNull KeyedBossBar createBossBar(@NotNull NamespacedKey arg0, String arg1, @NotNull BarColor arg2, @NotNull BarStyle arg3, BarFlag[] arg4) {
-        throw NotImplementedException.createByLazy(Server.class,
-                "createBossBar",
-                NamespacedKey.class,
-                String.class,
-                BarColor.class,
-                BarStyle.class,
-                BarFlag[].class);
+        throw NotImplementedException.createByLazy(Server.class, "createBossBar", NamespacedKey.class, String.class, BarColor.class, BarStyle.class, BarFlag[].class);
     }
 
     @Override
     public @NotNull BossBar createBossBar(String arg0, @NotNull BarColor arg1, @NotNull BarStyle arg2, BarFlag[] arg3) {
-        throw NotImplementedException.createByLazy(Server.class,
-                "createBossBar",
-                String.class,
-                BarColor.class,
-                BarStyle.class,
-                BarFlag[].class);
+        throw NotImplementedException.createByLazy(Server.class, "createBossBar", String.class, BarColor.class, BarStyle.class, BarFlag[].class);
     }
 
     @Override
@@ -1496,8 +1363,7 @@ public abstract class SoakServer implements Server {
         }
         try {
             //blocking -> need to fix this
-            return profileManager.uncached()
-                    .profile(id).thenApply(profile -> new SoakPlayerProfile(profile, false)).get();
+            return profileManager.uncached().profile(id).thenApply(profile -> new SoakPlayerProfile(profile, false)).get();
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }
@@ -1518,8 +1384,7 @@ public abstract class SoakServer implements Server {
         }
         try {
             //blocking -> need to fix this
-            return profileManager.uncached()
-                    .profile(uuid).thenApply(profile -> new SoakPlayerProfile(name == null ? profile : profile.withName(name), false)).get();
+            return profileManager.uncached().profile(uuid).thenApply(profile -> new SoakPlayerProfile(name == null ? profile : profile.withName(name), false)).get();
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }
@@ -1539,8 +1404,7 @@ public abstract class SoakServer implements Server {
         }
         try {
             //blocking -> need to fix this
-            return profileManager.uncached()
-                    .profile(name).thenApply(profile -> new SoakPlayerProfile(profile, false)).get();
+            return profileManager.uncached().profile(name).thenApply(profile -> new SoakPlayerProfile(profile, false)).get();
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }
@@ -1620,11 +1484,7 @@ public abstract class SoakServer implements Server {
 
     @Override
     public void sendPluginMessage(@NotNull Plugin source, @NotNull String channel, byte[] message) {
-        throw NotImplementedException.createByLazy(Server.class,
-                "sendPluginMessage",
-                Plugin.class,
-                String.class,
-                byte[].class);
+        throw NotImplementedException.createByLazy(Server.class, "sendPluginMessage", Plugin.class, String.class, byte[].class);
     }
 
     @Override

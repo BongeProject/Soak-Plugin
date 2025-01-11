@@ -32,7 +32,7 @@ public class SoakItemFlagMap {
     public static Key<Value<Boolean>> toSponge(ItemFlag flag) {
         switch (flag) {
             case HIDE_ENCHANTS:
-                return Keys.HIDE_ENCHANTMENTS;
+                return Keys.HIDE_STORED_ENCHANTMENTS;
             case HIDE_ATTRIBUTES:
                 return Keys.HIDE_ATTRIBUTES;
             case HIDE_UNBREAKABLE:
@@ -44,7 +44,7 @@ public class SoakItemFlagMap {
             case HIDE_ADDITIONAL_TOOLTIP:
                 return Keys.HIDE_MISCELLANEOUS;
             case HIDE_DYE:
-                throw new IllegalStateException("Unknown key map for HIDE_DYE on ItemFlag");
+                return Keys.HIDE_ENCHANTMENTS;
             default:
                 throw new RuntimeException("Unknown ItemFlag of " + flag.name());
         }

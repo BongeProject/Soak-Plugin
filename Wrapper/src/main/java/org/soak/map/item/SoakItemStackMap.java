@@ -137,6 +137,9 @@ public class SoakItemStackMap {
 
     public static AbstractItemMeta toBukkitMeta(@NotNull ItemStackLike container) {
         ItemType type = container.type();
+        if (type.equals(ItemTypes.PLAYER_HEAD.get()) || container.supports(Keys.SKIN_PROFILE_PROPERTY)) {
+            return new SoakSkullMeta(container);
+        }
         if (container.supports(Keys.POTION_EFFECTS)) {
             return new SoakPotionItemMeta(container);
         }
@@ -145,9 +148,6 @@ public class SoakItemStackMap {
         }
         if (container.supports(Keys.REPAIR_COST)) {
             return new SoakRepairable(container);
-        }
-        if (type.equals(ItemTypes.PLAYER_HEAD.get()) || container.supports(Keys.SKIN_PROFILE_PROPERTY)) {
-            return new SoakSkullMeta(container);
         }
         if (type.equals(ItemTypes.LEATHER_BOOTS.get()) || type.equals(ItemTypes.LEATHER_CHESTPLATE.get()) || type.equals(ItemTypes.LEATHER_HELMET.get()) || type.equals(ItemTypes.LEATHER_LEGGINGS.get())) {
             return new SoakLeatherArmorMeta(container);

@@ -17,6 +17,7 @@ import org.soak.NMSBounceLoader;
 import org.soak.plugin.SoakManager;
 import org.soak.plugin.SoakPluginContainer;
 import org.soak.plugin.paper.meta.SoakPluginMeta;
+import org.soak.plugin.paper.meta.SoakPluginMetaBuilder;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,8 +27,12 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.ZipFile;
 
 @ApiStatus.Internal
@@ -37,12 +42,44 @@ public class SoakPluginClassLoader extends URLClassLoader implements ConfiguredP
     private final Collection<Class<?>> classes = new LinkedTransferQueue<>();
 
     public SoakPluginClassLoader(PluginProviderContext context) throws MalformedURLException {
-        super(new URL[]{context.getPluginSource().toUri().toURL()}, SoakPluginClassLoader.class.getClassLoader());
+        super(librariesClassLoader(context), SoakPluginClassLoader.class.getClassLoader());
         this.context = context;
     }
 
-    public static void setupPlugin(JavaPlugin javaPlugin, String loggerName, File pluginFile, File configFile, File dataFolder, Supplier<PluginMeta> configurationGetter, Supplier<ClassLoader> loaderGetter) {
-        PluginMeta pMeta = configurationGetter.get();
+    private static URL[] librariesClassLoader(PluginProviderContext context) throws MalformedURLException {
+        PluginMeta meta = context.getConfiguration();
+        List<String> libraries;
+        if(meta instanceof SoakPluginMeta spm){
+            libraries = spm.getLibraries();
+        }else{
+            libraries = ((PluginDescriptionFile)meta).getLibraries();
+        }
+        URL extra = context.getPluginSource().toUri().toURL();
+        List<File> paths = libraries.stream().map(string -> {
+            String[] split =string.split(":", 3);
+            String group = split[0].replaceAll(Pattern.quote("."), "/");
+            String id = split[1];
+            String version = split[2];
+            return new File("soakLibraries/" + group + "/" + id + "/" + version + "/" + id + "-" + version + ".jar");
+        }).toList();
+        String missing = paths.stream().filter(file -> !file.exists()).map(File::getName).map(n -> n.substring(0, n.length() - 4)).collect(Collectors.joining(", "));
+        if(!missing.isBlank()){
+            context.getLogger().error("Not all libraries have loaded, they could be downloading: Missing " + missing);
+        }
+        var stream = paths.stream().filter(file -> file.exists()).map(file -> {
+            try {
+                return file.toURI().toURL();
+            } catch (MalformedURLException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        return Stream.concat(stream, Stream.of(extra)).toArray(URL[]::new);
+
+    }
+
+    public static void setupPlugin(JavaPlugin javaPlugin, String loggerName, File pluginFile, File configFile, File dataFolder, Supplier<PluginMeta> descriptionGetter, Supplier<SoakPluginMeta> configurationGetter, Supplier<ClassLoader> loaderGetter) {
+        PluginMeta pDescription = descriptionGetter.get();
+        SoakPluginMeta pMeta = configurationGetter.get();
         var logger = PaperPluginLogger.getLogger(loggerName);
         logger.setUseParentHandlers(false);
         logger.addHandler(SoakManager.getManager().getConsole());
@@ -57,12 +94,12 @@ public class SoakPluginClassLoader extends URLClassLoader implements ConfiguredP
             //applyValue("loader", javaPlugin, this);
             applyValue("server", javaPlugin, Bukkit.getServer());
             applyValue("file", javaPlugin, pluginFile);
-            if (pMeta instanceof PluginDescriptionFile pluginDescriptionFile) {
+            if (pDescription instanceof PluginDescriptionFile pluginDescriptionFile) {
                 applyValue("description", javaPlugin, pluginDescriptionFile);
-            } else if (pMeta instanceof SoakPluginMeta meta) {
+            } else if (pDescription instanceof SoakPluginMeta meta) {
                 applyValue("description", javaPlugin, meta.toDescription());
             } else {
-                throw new RuntimeException("Unknown meta class: " + pMeta.getClass().getName());
+                throw new RuntimeException("Unknown meta class: " + pDescription.getClass().getName());
             }
             applyValue("pluginMeta", javaPlugin, pMeta);
             applyValue("dataFolder", javaPlugin, dataFolder);
@@ -98,6 +135,14 @@ public class SoakPluginClassLoader extends URLClassLoader implements ConfiguredP
         configuration.addDefaults(defaultConfig);
     }
 
+    public SoakPluginMeta buildMeta(){
+        var config = getConfiguration();
+        if(config instanceof SoakPluginMeta spm) {
+            return spm;
+        }
+        return new SoakPluginMetaBuilder().from(config).build();
+    }
+
     @Override
     public PluginMeta getConfiguration() {
         return this.context.getConfiguration();
@@ -123,10 +168,6 @@ public class SoakPluginClassLoader extends URLClassLoader implements ConfiguredP
         var foundGeneratedClass = generatedClasses.stream().filter(clazz -> clazz.getName().equals(name)).findAny();
         if (foundGeneratedClass.isPresent()) {
             return foundGeneratedClass.get();
-        }
-
-        if (name.contains(".vault.")) {
-            System.out.println("Found");
         }
 
         var opOtherClass = SoakManager
@@ -164,7 +205,7 @@ public class SoakPluginClassLoader extends URLClassLoader implements ConfiguredP
 
     @Override
     public void init(JavaPlugin javaPlugin) {
-        setupPlugin(javaPlugin, this.getConfiguration().getName(), this.context.getPluginSource().toFile(), new File(this.context.getDataDirectory().toFile(), "config.yml"), this.context.getDataDirectory().toFile(), this::getConfiguration, () -> this);
+        setupPlugin(javaPlugin, this.getConfiguration().getName(), this.context.getPluginSource().toFile(), new File(this.context.getDataDirectory().toFile(), "config.yml"), this.context.getDataDirectory().toFile(), this::getConfiguration, this::buildMeta, () -> this);
     }
 
     @Override
